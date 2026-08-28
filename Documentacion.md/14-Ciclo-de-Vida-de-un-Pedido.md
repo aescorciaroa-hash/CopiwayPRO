@@ -54,23 +54,23 @@ redirect('/client/ordenes');
 - (si es **efectivo**, el pago queda `pendiente` hasta la entrega — regla "Cero Crédito").
 
 ### 3. La cocina lo prepara → `KdsController`
-- El KDS lista los pedidos `pendiente` / `en_preparacion` / `listo`.
-- "Preparar" → `cambiarEstado($id, 'en_preparacion', ['id_ayudante' => Auth::id()])`.
-- (opcional) "Imprimir tirilla" → `tirilla($id)` marca `tirilla_impresa`.
-- "Marcar listo" → `cambiarEstado($id, 'listo')`.
-- Cada cambio crea una `NOTIFICACION`.
+- El tablero KDS (`kitchen/index`) divide visualmente los pedidos en 3 columnas limpias: **Pendientes**, **En Preparación** y **Listos**.
+- Cuenta con barra superior interactiva con cronómetro de tiempo promedio (8.5 min), botón de activación de sonido de alertas y reloj digital en tiempo real.
+- "Preparar" → `cambiarEstado($id, 'en_preparacion', ['id_ayudante' => Auth::id()])` (la tarjeta pasa a la columna central con borde de resplandor rojo).
+- "Imprimir tirilla" → `tirilla($id)` marca `tirilla_impresa` e inicia la impresión táctil.
+- "Marcar listo" → `cambiarEstado($id, 'listo')` (mueve el pedido a la columna de Listos).
+- Cada cambio genera una `NOTIFICACION` automática en tiempo real para el cliente.
 
 ### 4. El domiciliario lo lleva → `PanelController`
-- Ve los pedidos `listo` sin domiciliario.
-- "Tomar" → `UPDATE PEDIDO SET id_domiciliario = ?` + su estado a `en_ruta`.
-- "Iniciar ruta" → `cambiarEstado($id, 'en_camino')` (avisa al cliente).
-- Llega a la casa. El cliente le muestra el **PIN de entrega** (visible en "Órdenes
-  Activas").
-- "Entregar" → valida `hash_equals($p['pin_entrega'], $input)`:
-  - si el pago era **efectivo** → `aprobarPago($id)` → **⚡ ahora sí** se descuenta
-    inventario y se suman puntos,
+- La interfaz táctica split-screen (`delivery/index`) presenta los pedidos disponibles en el sidebar izquierdo junto con un mapa Leaflet interactivo a pantalla completa a la derecha.
+- Muestra el estado de disponibilidad del domiciliario con switch interactivo.
+- "Tomar" → `UPDATE PEDIDO SET id_domiciliario = ?` + su estado a `en_ruta`. Cada tarjeta incluye el banner en naranja `¡COBRAR EN EFECTIVO: $X!`, botón directo a WhatsApp para contactar al cliente, y enlaces instantáneos a **Waze** y **Google Maps**.
+- "Iniciar ruta" → `cambiarEstado($id, 'en_camino')` (notifica al cliente).
+- El mapa en vivo proyecta la ruta desde la sede hasta la ubicación con card flotante de destino (`Llegada est: 12 mins`) y barra flotante inferior de acciones.
+- "Entregar" → abre el modal flotante y valida `hash_equals($p['pin_entrega'], $input)`:
+  - si el pago era **efectivo** → `aprobarPago($id)` → **⚡ ahora sí** se descuenta inventario y se suman puntos vía trigger,
   - `cambiarEstado($id, 'entregado')`,
-  - si no le quedan más pedidos, vuelve a `disponible`.
+  - si no quedan más pedidos pendientes asignados, el domiciliario vuelve automáticamente a `disponible`.
 
 ### 5. El cliente hace seguimiento → `OrdenesController`
 - Barra de progreso Recibido → Cocina → Listo → En Camino.

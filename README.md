@@ -78,12 +78,9 @@ app/Views/           Plantillas PHP y layouts tradicionales
   personal (alta/baja/soft delete/eliminación), directorio de clientes, ajustes
   (tarifa, margen, horario, pausa de emergencia) y cierre de caja con auditoría de
   insumos, liquidación de domiciliarios y reporte imprimible.
-- **Cocina (KDS)** — login de estación en dos pasos, tablero Kanban (Pendientes /
-  En Preparación / Listos), cronómetro por pedido, SLA >15 min con borde pulsante,
-  resaltado SIN/EXTRA, inventario crítico, resumen por producto, tirilla imprimible.
-- **Domiciliario** — login de estación, disponibilidad, pedidos disponibles,
-  autoasignación, ruta, contacto de última milla, validación de PIN, cobro en
-  efectivo y cierre del ciclo.
+- **Cocina (KDS)** — login de estación con diseño en tarjeta blanca limpia, tablero Kanban KDS de 3 columnas (Pendientes / En Preparación / Listos), cronómetro por pedido, reloj digital en vivo, resplandor de borde pulsante para pedidos en preparación, resaltado de personalizaciones (SIN/EXTRA), alerta desplegable de inventario crítico, resumen de preparación por lote y tirilla de comanda imprimible.
+- **Domiciliario** — login de estación rediseñado, interfaz táctica dividida en pantalla completa (split-screen), lista lateral de pedidos con banner de cobro en efectivo, botón directo de WhatsApp para contactar al cliente, integraciones instantáneas con Waze y Google Maps, mapa interactivo Leaflet en pantalla completa con tarjeta flotante de destino y barra inferior de navegación y entrega validando el PIN de 4 dígitos.
 
 El descuento automático de inventario y la suma de puntos al aprobarse un pago los
 ejecuta un **trigger de la base de datos** (`trg_pago_aprobado`).
+

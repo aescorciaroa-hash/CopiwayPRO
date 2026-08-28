@@ -20,28 +20,24 @@ Se llama al inicio de cada método (segundo factor por PIN de estación).
 ## Métodos
 
 ### `estacionForm()` / `estacionLogin()` — `/kitchen/estacion`
-Segundo login. `estacionLogin` compara el PIN enviado con
-`Configuracion::value('pin_estacion_kds')` (usando `hash_equals`). Si coincide →
-`Session::set('estacion_cocina_ok', true)` → `/kitchen`.
+Segundo login de estación en tarjeta flotante limpia (`rounded-[32px]`, `shadow-2xl` sobre `#f8fafc`). `estacionLogin` compara el PIN enviado con `Configuracion::value('pin_estacion_kds')` (usando `hash_equals`). Si coincide → `Session::set('estacion_cocina_ok', true)` → `/kitchen`.
 
 ### `index(): string` — `GET /kitchen`
 1. `requireEstacion()`.
-2. `Pedido::activos()` → los reparte en `$tablero` por estado
-   (`pendiente`, `en_preparacion`, `listo`), añadiendo `codigo` y `lineas`.
-3. `$resumen` — consulta agregada: cuántas unidades de cada producto hay pendientes
-   (para preparar en lote).
-4. `$criticos` — `Ingrediente::criticos()` (stock ≤ umbral).
-5. Vista `kitchen/index` (layout `kitchen`).
+2. `Pedido::activos()` → los reparte en `$tablero` por estado de 3 columnas (`pendiente`, `en_preparacion`, `listo`), añadiendo `codigo` y `lineas`.
+3. Renderiza la barra superior interactiva con cronómetro de tiempo promedio (8.5 min), botón de activación de sonido de alertas y reloj digital en vivo.
+4. `$resumen` — consulta agregada en sidebar: cuántas unidades de cada producto hay pendientes (para preparar en lote).
+5. `$criticos` — `Ingrediente::criticos()` (desplegable de inventario crítico en sidebar).
+6. Vista `kitchen/index` (layout `kitchen` con interfaz clara `#f8fafc`).
 
 ### `preparar(string $id): string` — `POST /kitchen/pedido/{id}/preparar`
-`PedidoServicio::cambiarEstado($id, 'en_preparacion', ['id_ayudante' => Auth::id()])`.
+`PedidoServicio::cambiarEstado($id, 'en_preparacion', ['id_ayudante' => Auth::id()])`. Mueve el pedido a la columna central con borde de resplandor rojo (`border-2 border-red-500`).
 
 ### `listo(string $id): string` — `POST /kitchen/pedido/{id}/listo`
-`PedidoServicio::cambiarEstado($id, 'listo')` — avisa a logística.
+`PedidoServicio::cambiarEstado($id, 'listo')` — mueve la orden a la columna de Listos y avisa a logística.
 
 ### `tirilla(string $id): string` — `GET /kitchen/pedido/{id}/tirilla`
-`Pedido::completo($id)`, marca `tirilla_impresa = 1`, devuelve la vista
-`kitchen/tirilla` (layout `blank`, con `window.print`).
+`Pedido::completo($id)`, marca `tirilla_impresa = 1`, devuelve la vista `kitchen/tirilla` (layout `blank`, con `window.print`).
 
 ## Notas
 - Cada `cambiarEstado` crea también una `NOTIFICACION` para el cliente.

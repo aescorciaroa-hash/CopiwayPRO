@@ -53,20 +53,18 @@ donde se mete la vista:
 </body>
 ```
 
-Layouts disponibles:
-
 | Layout | Se usa en |
 |--------|-----------|
-| `public` | landing |
-| `auth` | login / registro / recuperar (tarjeta partida con imagen) |
-| `admin` | panel del administrador (sidebar) |
-| `client` | panel del cliente (sidebar) |
-| `kitchen` | KDS (tema oscuro fijo, letra grande) |
-| `delivery` | domiciliario (móvil, botones grandes) |
-| `blank` | sin marco: tirillas, errores, logins de estación |
+| `public` | landing pública, catálogo y vistas abiertas |
+| `auth` | login / registro / recuperar (tarjeta flotante centrada `rounded-[32px]` sobre fondo claro `#f8fafc`) |
+| `admin` | panel del administrador (sidebar con fondo oscuro) |
+| `client` | panel del cliente (sidebar lateral y navegación) |
+| `kitchen` | KDS de cocina (interfaz limpia `#f8fafc`, sidebar blanco con logo CopiwayPRO, resumen de preparación e inventario crítico, 3 columnas KDS: Pendientes, En Preparación con borde de resplandor rojo, Listos) |
+| `delivery` | panel del domiciliario (diseño táctico split-screen en pantalla completa con mapa Leaflet, lista lateral de pedidos con cobrar en efectivo, Waze/Maps y validación por PIN) |
+| `blank` | sin marco: tirillas de impresión, respuestas JSON o ventanas modales |
 
 > El sidebar de admin/client/kitchen es **fijo a la altura de la pantalla**
-> (`sticky top-0 h-screen`), para que "Cerrar Sesión" siempre esté visible sin scroll.
+> (`sticky top-0 h-screen`), para que las acciones principales y "Cerrar Sesión" siempre estén visibles sin scroll.
 
 ## Partials (trozos reutilizables) — `app/Views/partials/`
 
