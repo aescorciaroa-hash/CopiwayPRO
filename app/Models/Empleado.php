@@ -82,14 +82,18 @@ class Empleado
     public function actualizar(string $rol, string $id, array $d): void
     {
         if ($rol === 'cocina') {
+            // Si el formulario no manda turno, conservamos el que ya tenia.
+            $turno = $d['turno'] ?? null;
+            if ($turno === null || $turno === '') {
+                $actual = $this->buscar('cocina', $id);
+                $turno = $actual['turno'] ?? 'mixto';
+            }
             if (!empty($d['contrasena'])) {
                 $stmt = $this->conn->prepare("UPDATE AYUDANTE_COCINA SET nombre=?, correo=?, telefono=?, contrasena=?, turno=? WHERE id_ayudante=?");
                 $hash = password_hash($d['contrasena'], PASSWORD_BCRYPT);
-                $turno = $d['turno'] ?? 'mixto';
                 $stmt->bind_param("ssssss", $d['nombre'], $d['correo'], $d['telefono'], $hash, $turno, $id);
             } else {
                 $stmt = $this->conn->prepare("UPDATE AYUDANTE_COCINA SET nombre=?, correo=?, telefono=?, turno=? WHERE id_ayudante=?");
-                $turno = $d['turno'] ?? 'mixto';
                 $stmt->bind_param("sssss", $d['nombre'], $d['correo'], $d['telefono'], $turno, $id);
             }
             $stmt->execute();

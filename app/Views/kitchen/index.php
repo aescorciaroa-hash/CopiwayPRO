@@ -31,6 +31,33 @@ $cols = [
         </div>
     </div>
 
+    <!-- RF-59: Resumen agregado por producto (preparación por lotes) -->
+    <?php if (!empty($resumen)): ?>
+        <div class="mb-6 bg-white rounded-3xl border border-slate-100/90 shadow-sm p-4">
+            <p class="text-xs font-black uppercase text-slate-400 mb-2">Total a preparar (por lotes)</p>
+            <div class="flex flex-wrap gap-2">
+                <?php foreach ($resumen as $nombre => $cant): ?>
+                    <span class="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-full px-3 py-1.5 text-sm font-bold text-slate-700">
+                        <span class="text-[#ff6600] font-black"><?= (int) $cant ?>x</span> <?= e($nombre) ?>
+                    </span>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- RF-60: Inventario crítico visible en cocina -->
+    <?php if (!empty($criticos)): ?>
+        <div class="mb-6 bg-red-50 border border-red-200 rounded-3xl p-4 flex items-start gap-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500 shrink-0 mt-0.5"></i>
+            <div>
+                <p class="text-xs font-black uppercase text-red-600 mb-1">Insumos por agotarse</p>
+                <p class="text-sm font-bold text-red-700">
+                    <?php foreach ($criticos as $i => $c): ?><?= $i ? ' · ' : '' ?><?= e($c['nombre']) ?> (<?= rtrim(rtrim(number_format((float) $c['cantidad_stock'], 2, '.', ''), '0'), '.') ?>)<?php endforeach; ?>
+                </p>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <!-- Grid de 3 Columnas principales KDS -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
@@ -103,13 +130,13 @@ $cols = [
             </div>
 
             <div class="space-y-4">
-                <?php foreach ($tablero['en_preparacion'] as $p): ?>
-                    <div class="bg-white rounded-3xl p-5 shadow-md border-2 border-red-500 space-y-4 relative overflow-hidden">
+                <?php foreach ($tablero['en_preparacion'] as $p): $tarde = (int) $p['minutos'] >= 15; ?>
+                    <div class="bg-white rounded-3xl p-5 shadow-md space-y-4 relative overflow-hidden <?= $tarde ? 'border-2 border-red-500 animate-pulse' : 'border border-slate-100/90' ?>">
                         <div class="flex items-center justify-between">
                             <div>
-                                <span class="font-mono font-black text-xl text-red-600 block"><?= e($p['codigo']) ?></span>
-                                <span class="text-xs font-medium text-red-500 flex items-center gap-1 mt-0.5">
-                                    <i data-lucide="clock" class="w-3.5 h-3.5"></i> Hace <?= (int) $p['minutos'] ?> min
+                                <span class="font-mono font-black text-xl <?= $tarde ? 'text-red-600' : 'text-slate-900' ?> block"><?= e($p['codigo']) ?></span>
+                                <span class="text-xs font-medium <?= $tarde ? 'text-red-500' : 'text-slate-400' ?> flex items-center gap-1 mt-0.5">
+                                    <i data-lucide="clock" class="w-3.5 h-3.5"></i> Hace <?= (int) $p['minutos'] ?> min<?= $tarde ? ' · SLA superado' : '' ?>
                                 </span>
                             </div>
                             <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold">||</span>

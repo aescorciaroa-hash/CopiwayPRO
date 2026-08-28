@@ -144,7 +144,7 @@ $t = $cierre['totales'];
                     <input type="hidden" name="fecha" value="<?= date('Y-m-d') ?>">
                     <button class="w-full rounded-xl bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 text-sm font-bold">Confirmar y Cerrar Caja</button>
                 </form>
-                <a href="<?= url('/admin/ajustes/cierre?fecha=' . date('Y-m-d')) ?>" target="_blank"
+                <a href="<?= url('/admin/ajustes/reporte?fecha=' . date('Y-m-d')) ?>" target="_blank"
                    class="rounded-xl border border-gray-200 dark:border-stone-700 px-5 py-2.5 text-sm font-bold flex items-center gap-2">
                     <i data-lucide="download" class="w-4 h-4"></i> Ver / PDF
                 </a>

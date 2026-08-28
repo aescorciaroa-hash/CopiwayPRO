@@ -14,7 +14,7 @@ $nav = [
     ['/client/historial',   'history',          'Historial y Recompras'],
     ['/client/perfil',      'user-cog',         'Mi Perfil'],
 ];
-$current = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$current = current_path();
 $cartCount = $carritoModelLayout->cantidad();
 ?>
 <!DOCTYPE html>

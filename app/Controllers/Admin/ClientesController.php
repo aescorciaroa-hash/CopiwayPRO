@@ -15,13 +15,15 @@ $pedidoModel  = new Pedido();
 
 if ($action === 'historial') {
     $id = $_GET['id'] ?? '';
-    $cliente = $clienteModel->directorio();
+    $cliente = $clienteModel->find($id);
     $pedidos = $clienteModel->historial($id);
     foreach ($pedidos as &$p) {
         $p['codigo'] = $pedidoModel->codigo($p);
     }
+    unset($p);
+    if ($cliente) { unset($cliente['contrasena']); }
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['pedidos' => $pedidos]);
+    echo json_encode(['cliente' => $cliente ?: ['nombre' => ''], 'pedidos' => $pedidos]);
     exit;
 } else {
     redirect('/app/Views/admin/clientes/index.php');

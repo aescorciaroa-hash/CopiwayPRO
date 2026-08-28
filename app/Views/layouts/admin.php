@@ -10,7 +10,7 @@ $nav = [
     ['/admin/clientes',  'contact',           'Directorio Clientes'],
     ['/admin/ajustes',   'settings',          'Ajustes y Caja'],
 ];
-$current = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$current = current_path();
 $active = fn($path) => $path === '/admin'
     ? ($current === '/admin' || $current === '/admin/')
     : str_starts_with($current, $path);

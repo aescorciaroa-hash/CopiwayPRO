@@ -14,7 +14,20 @@ $action = $_GET['action'] ?? $_POST['action'] ?? '';
 $productoModel  = new Producto();
 $categoriaModel = new Categoria();
 
-if ($action === 'guardarProducto') {
+if ($action === 'cargarProducto') {
+    $id = $_GET['id'] ?? '';
+    $prod = $productoModel->conCategoria($id);
+    header('Content-Type: application/json; charset=utf-8');
+    if (!$prod) {
+        http_response_code(404);
+        echo json_encode(['error' => 'Producto no encontrado']);
+        exit;
+    }
+    $prod['receta'] = $productoModel->receta($id);
+    echo json_encode($prod);
+    exit;
+}
+elseif ($action === 'guardarProducto') {
     $idCat   = $_POST['id_categoria'] ?? '';
     $nombre  = trim($_POST['nombre'] ?? '');
     $precio  = (float) ($_POST['precio'] ?? 0);
@@ -28,12 +41,13 @@ if ($action === 'guardarProducto') {
     }
 
     $id = $productoModel->guardar([
-        'id_producto'  => $idProd,
-        'id_categoria' => $idCat,
-        'nombre'       => $nombre,
-        'descripcion'  => $desc,
-        'precio_venta' => $precio,
-        'imagen_url'   => $imagen,
+        'id_producto'        => $idProd,
+        'id_categoria'       => $idCat,
+        'nombre'             => $nombre,
+        'descripcion'        => $desc,
+        'precio'             => $precio,
+        'imagen'             => $imagen,
+        'etiqueta_destacada' => $_POST['etiqueta_destacada'] ?? 'ninguna',
     ]);
 
     $ings  = $_POST['receta_ingrediente'] ?? [];

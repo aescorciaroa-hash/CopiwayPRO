@@ -56,9 +56,8 @@ class Categoria
     public function crear(array $d): string
     {
         $id = uuid();
-        $stmt = $this->conn->prepare("INSERT INTO CATEGORIA (id_categoria, nombre, ambito, descripcion) VALUES (?,?,?,?)");
-        $desc = $d['descripcion'] ?? null;
-        $stmt->bind_param("ssss", $id, $d['nombre'], $d['ambito'], $desc);
+        $stmt = $this->conn->prepare("INSERT INTO CATEGORIA (id_categoria, nombre, ambito) VALUES (?,?,?)");
+        $stmt->bind_param("sss", $id, $d['nombre'], $d['ambito']);
         $stmt->execute();
         $stmt->close();
         return $id;

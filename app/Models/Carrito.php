@@ -52,7 +52,7 @@ class Carrito
                 'key'               => $key,
                 'id_producto'       => $idProducto,
                 'nombre'            => $prod['nombre'],
-                'precio_base'       => (float) $prod['precio_venta'],
+                'precio_base'       => (float) $prod['precio'],
                 'cantidad'          => $cantidad,
                 'personalizaciones' => $personalizaciones,
             ];

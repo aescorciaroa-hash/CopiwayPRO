@@ -90,28 +90,26 @@ class Ingrediente
 
     public function guardar(array $d): string
     {
+        $costo  = (float) ($d['costo_unitario'] ?? 0);
+        $umbral = (float) ($d['umbral_minimo'] ?? 0);
+        $stock  = (float) ($d['cantidad_stock'] ?? 0);
+        $extra  = (float) ($d['precio_extra'] ?? 0);
+        $prov   = $d['proveedor'] ?? null;
+
         if (!empty($d['id_ingrediente'])) {
             $stmt = $this->conn->prepare(
-                "UPDATE INGREDIENTE SET id_categoria=?, nombre=?, unidad_medida=?, costo_unitario=?, umbral_minimo=?, cantidad_stock=?, precio_extra=? WHERE id_ingrediente=?"
+                "UPDATE INGREDIENTE SET id_categoria=?, nombre=?, unidad_medida=?, costo_unitario=?, umbral_minimo=?, cantidad_stock=?, precio_extra=?, proveedor=? WHERE id_ingrediente=?"
             );
-            $costo  = (float) ($d['costo_unitario'] ?? 0);
-            $umbral = (float) ($d['umbral_minimo'] ?? 0);
-            $stock  = (float) ($d['cantidad_stock'] ?? 0);
-            $extra  = (float) ($d['precio_extra'] ?? 0);
-            $stmt->bind_param("sssdddds", $d['id_categoria'], $d['nombre'], $d['unidad_medida'], $costo, $umbral, $stock, $extra, $d['id_ingrediente']);
+            $stmt->bind_param("sssddddss", $d['id_categoria'], $d['nombre'], $d['unidad_medida'], $costo, $umbral, $stock, $extra, $prov, $d['id_ingrediente']);
             $stmt->execute();
             $stmt->close();
             return $d['id_ingrediente'];
         } else {
             $id = uuid();
             $stmt = $this->conn->prepare(
-                "INSERT INTO INGREDIENTE (id_ingrediente, id_categoria, nombre, unidad_medida, costo_unitario, umbral_minimo, cantidad_stock, precio_extra) VALUES (?,?,?,?,?,?,?,?)"
+                "INSERT INTO INGREDIENTE (id_ingrediente, id_categoria, nombre, unidad_medida, costo_unitario, umbral_minimo, cantidad_stock, precio_extra, proveedor) VALUES (?,?,?,?,?,?,?,?,?)"
             );
-            $costo  = (float) ($d['costo_unitario'] ?? 0);
-            $umbral = (float) ($d['umbral_minimo'] ?? 0);
-            $stock  = (float) ($d['cantidad_stock'] ?? 0);
-            $extra  = (float) ($d['precio_extra'] ?? 0);
-            $stmt->bind_param("ssssdddd", $id, $d['id_categoria'], $d['nombre'], $d['unidad_medida'], $costo, $umbral, $stock, $extra);
+            $stmt->bind_param("ssssdddds", $id, $d['id_categoria'], $d['nombre'], $d['unidad_medida'], $costo, $umbral, $stock, $extra, $prov);
             $stmt->execute();
             $stmt->close();
             return $id;

@@ -56,7 +56,7 @@ class PedidoServicio
             $subtotal = 0.0;
             foreach ($datos['lineas'] as $l) {
                 $prod = $productoModel->find($l['id_producto']);
-                $precio = (float) $prod['precio_venta'];
+                $precio = (float) $prod['precio'];
                 $extras = 0.0;
                 foreach ($l['personalizaciones'] ?? [] as $p) {
                     if (($p['accion'] ?? '') === 'agregar') $extras += (float) ($p['costo'] ?? 0);
@@ -84,7 +84,7 @@ class PedidoServicio
             foreach ($datos['lineas'] as $l) {
                 $prod = $productoModel->find($l['id_producto']);
                 $idDet = uuid();
-                $precioU = (float) $prod['precio_venta'];
+                $precioU = (float) $prod['precio'];
                 $cant = (int) $l['cantidad'];
 
                 $stmtD = $this->conn->prepare(
@@ -143,9 +143,15 @@ class PedidoServicio
 
     public function cambiarEstado(string $idPedido, string $estado, array $extra = []): void
     {
-        if (isset($extra['id_domiciliario'])) {
+        if (!empty($extra['id_domiciliario'])) {
             $stmt = $this->conn->prepare("UPDATE PEDIDO SET estado = ?, id_domiciliario = ? WHERE id_pedido = ?");
             $stmt->bind_param("sss", $estado, $extra['id_domiciliario'], $idPedido);
+        } elseif (!empty($extra['id_ayudante'])) {
+            // Solo asigna el ayudante si el pedido aun no tiene uno (el primero que lo toma).
+            $stmt = $this->conn->prepare(
+                "UPDATE PEDIDO SET estado = ?, id_ayudante = COALESCE(id_ayudante, ?) WHERE id_pedido = ?"
+            );
+            $stmt->bind_param("sss", $estado, $extra['id_ayudante'], $idPedido);
         } else {
             $stmt = $this->conn->prepare("UPDATE PEDIDO SET estado = ? WHERE id_pedido = ?");
             $stmt->bind_param("ss", $estado, $idPedido);

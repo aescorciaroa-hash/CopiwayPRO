@@ -7,6 +7,24 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+/**
+ * Carpeta base del proyecto vista desde el navegador. Se detecta sola:
+ *   http://localhost/Copiway2/public/login   -> APP_BASE = '/Copiway2/public'
+ *   http://copiway2.test/login               -> APP_BASE = ''
+ * Asi los enlaces y redirecciones funcionan igual con dominio propio o con localhost.
+ */
+if (!defined('APP_BASE')) {
+    $cfg = @require __DIR__ . '/../../config/config.php';
+    $manual = $cfg['app']['base_url'] ?? '';
+    if ($manual !== '') {
+        define('APP_BASE', '/' . trim($manual, '/'));
+    } else {
+        $script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+        $base   = preg_replace('#/(index|router)\.php$#', '', $script);
+        define('APP_BASE', rtrim($base, '/') === '' ? '' : rtrim($base, '/'));
+    }
+}
+
 /** Genera un UUID v4 (para las llaves CHAR(36) de la base de datos). */
 function uuid(): string
 {
@@ -25,13 +43,23 @@ function e($value): string
 /** URL de un asset publico. */
 function asset(string $path): string
 {
-    return '/assets/' . ltrim($path, '/');
+    return APP_BASE . '/assets/' . ltrim($path, '/');
 }
 
 /** Genera la URL absoluta para una ruta. */
 function url(string $path = ''): string
 {
-    return '/' . ltrim($path, '/');
+    return APP_BASE . '/' . ltrim($path, '/');
+}
+
+/** Ruta actual sin la carpeta base (para marcar el enlace activo del menu). */
+function current_path(): string
+{
+    $p = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    if (APP_BASE !== '' && strpos($p, APP_BASE) === 0) {
+        $p = substr($p, strlen(APP_BASE));
+    }
+    return $p === '' ? '/' : $p;
 }
 
 /** Genera el campo oculto HTML con el token CSRF. */
@@ -44,6 +72,12 @@ function csrf_field(): string
 /** Redirige a una ruta y termina la ejecucion. */
 function redirect(string $url): void
 {
+    // Prefija la carpeta base a las rutas internas ('/login', '/app/Views/...').
+    if (APP_BASE !== '' && isset($url[0]) && $url[0] === '/'
+        && substr($url, 0, 2) !== '//'
+        && strpos($url, APP_BASE . '/') !== 0) {
+        $url = APP_BASE . $url;
+    }
     header('Location: ' . $url);
     exit;
 }

@@ -35,12 +35,24 @@ if ($action === 'login') {
         redirect('/app/Views/auth/login.php');
     }
 
-    Auth::login($cuenta['role'], [
+    $sesion = [
         'id'       => $cuenta['id'],
         'nombre'   => $cuenta['nombre'],
         'correo'   => $cuenta['correo'],
         'telefono' => $cuenta['telefono'],
-    ]);
+    ];
+    // Guardamos tambien el id con el nombre de columna propio del rol,
+    // que es el que usan las vistas de cada panel.
+    if ($cuenta['role'] === 'cliente') {
+        $sesion['id_cliente'] = $cuenta['id'];
+    } elseif ($cuenta['role'] === 'cocina') {
+        $sesion['id_ayudante'] = $cuenta['id'];
+    } elseif ($cuenta['role'] === 'domiciliario') {
+        $sesion['id_domiciliario']      = $cuenta['id'];
+        $sesion['estado_disponibilidad'] = $cuenta['row']['estado_disponibilidad'] ?? 'desconectado';
+    }
+
+    Auth::login($cuenta['role'], $sesion);
 
     $_SESSION['_flash'][] = ['type' => 'success', 'title' => 'Bienvenido', 'message' => 'Ingreso exitoso.'];
 
@@ -55,9 +67,22 @@ elseif ($action === 'register') {
     $telefono   = trim($_POST['telefono'] ?? '');
     $fechaNac   = trim($_POST['fecha_nacimiento'] ?? '');
     $contrasena = $_POST['contrasena'] ?? '';
+    $confirmar  = $_POST['contrasena_confirmation'] ?? '';
+    $habeas     = !empty($_POST['habeas_data']);
 
-    if (empty($nombre) || empty($correo) || empty($contrasena)) {
-        $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'Error de registro', 'message' => 'Por favor completa todos los campos requeridos.'];
+    $errores = [];
+    if ($nombre === '')                                    $errores['nombre']   = 'Ingresa tu nombre.';
+    if (!filter_var($correo, FILTER_VALIDATE_EMAIL))       $errores['correo']   = 'Ingresa un correo valido.';
+    if ($telefono === '')                                  $errores['telefono'] = 'Ingresa tu telefono.';
+    if ($fechaNac === '' || !strtotime($fechaNac))         $errores['fecha_nacimiento'] = 'Ingresa tu fecha de nacimiento.';
+    if (strlen($contrasena) < 6)                           $errores['contrasena'] = 'Minimo 6 caracteres.';
+    if ($contrasena !== $confirmar)                        $errores['contrasena_confirmation'] = 'Las contrasenas no coinciden.';
+    if (!$habeas)                                          $errores['habeas_data'] = 'Debes aceptar el tratamiento de datos.';
+
+    if ($errores) {
+        $_SESSION['_errors'] = $errores;
+        $_SESSION['_old'] = ['nombre' => $nombre, 'correo' => $correo, 'telefono' => $telefono, 'fecha_nacimiento' => $fechaNac, 'habeas_data' => $habeas ? '1' : ''];
+        $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'Revisa el formulario', 'message' => 'Hay campos por corregir.'];
         redirect('/app/Views/auth/register.php');
     }
 
@@ -65,6 +90,7 @@ elseif ($action === 'register') {
         $_SESSION['_flash'][] = ['type' => 'warning', 'title' => 'Registro existente', 'message' => 'Este correo o telefono ya esta registrado.'];
         redirect('/app/Views/auth/register.php');
     }
+    unset($_SESSION['_errors'], $_SESSION['_old']);
 
     $id = $clienteModel->registrar([
         'nombre'           => $nombre,
@@ -75,10 +101,11 @@ elseif ($action === 'register') {
     ]);
 
     Auth::login('cliente', [
-        'id'       => $id,
-        'nombre'   => $nombre,
-        'correo'   => $correo,
-        'telefono' => $telefono,
+        'id'         => $id,
+        'id_cliente' => $id,
+        'nombre'     => $nombre,
+        'correo'     => $correo,
+        'telefono'   => $telefono,
     ]);
 
     $_SESSION['_flash'][] = ['type' => 'success', 'title' => 'Registro completado', 'message' => 'Tu cuenta ha sido creada exitosamente.'];

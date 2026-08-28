@@ -26,11 +26,13 @@ if ($action === 'guardarInsumo') {
     }
 
     $costoUnit = $cantidad > 0 ? round($costoTot / $cantidad, 2) : 0;
+    // Se crea con stock 0 y el movimiento de "entrada" es el que fija la cantidad
+    // real (asi queda registrado en el historial de inventario y no se duplica).
     $id = $ingredienteModel->guardar([
         'id_categoria'   => $catId,
         'nombre'         => $nombre,
         'unidad_medida'  => $unidad,
-        'cantidad_stock' => $cantidad,
+        'cantidad_stock' => 0,
         'umbral_minimo'  => (float) ($_POST['umbral_minimo'] ?? 10),
         'costo_unitario' => $costoUnit,
         'precio_extra'   => (float) ($_POST['precio_extra'] ?? 0),

@@ -38,12 +38,12 @@
         ['flame', 'Hecho al Momento', 'Nada se prepara antes de tu orden.'],
         ['shield-check', 'Pago 100% Seguro', 'Pasarela encriptada. Cero fiar, cero riesgo.'],
     ];
-    foreach ($benes as [$icon, $title, $desc]): ?>
+    foreach ($benes as [$icon, $beneTitulo, $desc]): ?>
         <div class="bg-white dark:bg-card border border-gray-100 dark:border-stone-800 rounded-3xl p-6 shadow-sm">
             <div class="w-12 h-12 rounded-2xl bg-brand-100 dark:bg-brand-500/15 text-brand-600 flex items-center justify-center mb-4">
                 <i data-lucide="<?= $icon ?>" class="w-6 h-6"></i>
             </div>
-            <h3 class="font-bold text-lg mb-1"><?= $title ?></h3>
+            <h3 class="font-bold text-lg mb-1"><?= $beneTitulo ?></h3>
             <p class="text-sm text-gray-500 dark:text-gray-400"><?= $desc ?></p>
         </div>
     <?php endforeach; ?>

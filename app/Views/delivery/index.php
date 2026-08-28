@@ -90,6 +90,17 @@ $pedidoIdActivo = $primerPedido['id_pedido'] ?? '';
                             <?php endforeach; ?>
                         </div>
 
+                        <!-- Botón Iniciar Ruta (solo si aún no va en camino) -->
+                        <?php if ($p['estado'] !== 'en_camino'): ?>
+                        <form method="post" action="<?= url('/delivery/pedido/' . $p['id_pedido'] . '/iniciar') ?>">
+                            <?= csrf_field() ?>
+                            <button type="submit"
+                                    class="w-full bg-[#ff6600] hover:bg-[#e65c00] text-white font-bold rounded-2xl py-3 flex items-center justify-center gap-2 text-xs transition shadow-md shadow-orange-500/20">
+                                <i data-lucide="navigation" class="w-4 h-4"></i> Iniciar Ruta
+                            </button>
+                        </form>
+                        <?php endif; ?>
+
                         <!-- Botón Contactar Cliente -->
                         <a href="https://wa.me/57<?= e($p['cliente_telefono']) ?>" target="_blank"
                            class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-2xl py-3 flex items-center justify-center gap-2 text-xs transition border border-emerald-200/50">

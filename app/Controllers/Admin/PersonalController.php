@@ -14,7 +14,21 @@ $action = $_GET['action'] ?? $_POST['action'] ?? '';
 $empleadoModel = new Empleado();
 $usuarioModel  = new Usuario();
 
-if ($action === 'crear') {
+if ($action === 'cargar') {
+    $rol = $_GET['rol'] ?? 'cocina';
+    $id  = $_GET['id'] ?? '';
+    $emp = $empleadoModel->buscar($rol, $id);
+    header('Content-Type: application/json; charset=utf-8');
+    if (!$emp) {
+        http_response_code(404);
+        echo json_encode(['error' => 'Empleado no encontrado']);
+        exit;
+    }
+    unset($emp['contrasena']);
+    echo json_encode($emp);
+    exit;
+}
+elseif ($action === 'crear') {
     $nombre     = trim($_POST['nombre'] ?? '');
     $correo     = trim($_POST['correo'] ?? '');
     $telefono   = trim($_POST['telefono'] ?? '');

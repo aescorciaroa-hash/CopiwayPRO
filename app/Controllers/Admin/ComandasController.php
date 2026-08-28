@@ -15,7 +15,22 @@ $action = $_GET['action'] ?? $_POST['action'] ?? '';
 $pedidoModel   = new Pedido();
 $servicioModel = new PedidoServicio();
 
-if ($action === 'crearManual') {
+if ($action === 'detalle') {
+    $id = $_GET['id'] ?? '';
+    $pedido = $pedidoModel->completo($id);
+    if ($pedido) {
+        $pedido['codigo'] = $pedidoModel->codigo($pedido);
+    }
+    header('Content-Type: application/json; charset=utf-8');
+    if (!$pedido) {
+        http_response_code(404);
+        echo json_encode(['error' => 'Pedido no encontrado']);
+        exit;
+    }
+    echo json_encode($pedido);
+    exit;
+}
+elseif ($action === 'crearManual') {
     $nombre    = trim($_POST['cliente'] ?? '');
     $telefono  = trim($_POST['telefono'] ?? '');
     $direccion = trim($_POST['direccion'] ?? '');

@@ -152,26 +152,27 @@ class Producto
 
     public function guardar(array $d): string
     {
+        $precio    = (float) ($d['precio_venta'] ?? $d['precio'] ?? 0);
+        $estado    = $d['estado'] ?? 'activo';
+        $imagen    = $d['imagen_url'] ?? $d['imagen'] ?? null;
+        $etiqueta  = $d['etiqueta_destacada'] ?? 'ninguna';
+        $etiquetas = ['ninguna', 'mas_vendido', 'recomendado', 'nuevo', 'especialidad'];
+        if (!in_array($etiqueta, $etiquetas, true)) { $etiqueta = 'ninguna'; }
+
         if (!empty($d['id_producto'])) {
             $stmt = $this->conn->prepare(
-                "UPDATE PRODUCTO SET id_categoria=?, nombre=?, descripcion=?, precio_venta=?, estado=?, imagen_url=? WHERE id_producto=?"
+                "UPDATE PRODUCTO SET id_categoria=?, nombre=?, descripcion=?, precio=?, estado=?, imagen=?, etiqueta_destacada=? WHERE id_producto=?"
             );
-            $precio = (float) ($d['precio_venta'] ?? 0);
-            $estado = $d['estado'] ?? 'activo';
-            $imagen = $d['imagen_url'] ?? null;
-            $stmt->bind_param("ssdssss", $d['id_categoria'], $d['nombre'], $d['descripcion'], $precio, $estado, $imagen, $d['id_producto']);
+            $stmt->bind_param("sssdssss", $d['id_categoria'], $d['nombre'], $d['descripcion'], $precio, $estado, $imagen, $etiqueta, $d['id_producto']);
             $stmt->execute();
             $stmt->close();
             return $d['id_producto'];
         } else {
             $id = uuid();
             $stmt = $this->conn->prepare(
-                "INSERT INTO PRODUCTO (id_producto, id_categoria, nombre, descripcion, precio_venta, estado, imagen_url) VALUES (?,?,?,?,?,?,?)"
+                "INSERT INTO PRODUCTO (id_producto, id_categoria, nombre, descripcion, precio, estado, imagen, etiqueta_destacada) VALUES (?,?,?,?,?,?,?,?)"
             );
-            $precio = (float) ($d['precio_venta'] ?? 0);
-            $estado = $d['estado'] ?? 'activo';
-            $imagen = $d['imagen_url'] ?? null;
-            $stmt->bind_param("sssdsss", $id, $d['id_categoria'], $d['nombre'], $d['descripcion'], $precio, $estado, $imagen);
+            $stmt->bind_param("ssssdsss", $id, $d['id_categoria'], $d['nombre'], $d['descripcion'], $precio, $estado, $imagen, $etiqueta);
             $stmt->execute();
             $stmt->close();
             return $id;

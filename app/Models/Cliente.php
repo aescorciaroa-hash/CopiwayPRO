@@ -54,18 +54,52 @@ class Cliente
         }
     }
 
+    /** Un solo cliente por su id. */
+    public function find(string $idCliente): ?array
+    {
+        $stmt = $this->conn->prepare("SELECT * FROM CLIENTE WHERE id_cliente = ? LIMIT 1");
+        $stmt->bind_param("s", $idCliente);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return $row ?: null;
+    }
+
     public function historial(string $idCliente): array
     {
         $stmt = $this->conn->prepare(
-            "SELECT p.*, d.nombre AS domiciliario_nombre
+            "SELECT p.*, d.nombre AS domiciliario_nombre,
+                    d.telefono AS domiciliario_telefono, d.tipo_vehiculo, d.placa,
+                    r.puntaje, r.comentario
              FROM PEDIDO p
              LEFT JOIN DOMICILIARIO d ON d.id_domiciliario = p.id_domiciliario
+             LEFT JOIN RESENA r ON r.id_pedido = p.id_pedido
              WHERE p.id_cliente = ? ORDER BY p.fecha_hora DESC"
         );
         $stmt->bind_param("s", $idCliente);
         $stmt->execute();
         $result = $stmt->get_result();
         $data = $result->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+
+        return $data;
+    }
+
+    /** Pedidos que aun estan en curso (para la vista "Ordenes activas" del cliente). */
+    public function pedidosActivos(string $idCliente): array
+    {
+        $stmt = $this->conn->prepare(
+            "SELECT p.*, d.nombre AS domiciliario_nombre,
+                    d.telefono AS domiciliario_telefono, d.tipo_vehiculo, d.placa
+             FROM PEDIDO p
+             LEFT JOIN DOMICILIARIO d ON d.id_domiciliario = p.id_domiciliario
+             WHERE p.id_cliente = ?
+               AND p.estado IN ('pendiente','en_preparacion','listo','en_camino')
+             ORDER BY p.fecha_hora DESC"
+        );
+        $stmt->bind_param("s", $idCliente);
+        $stmt->execute();
+        $data = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
 
         return $data;

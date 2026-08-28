@@ -132,7 +132,7 @@ class CierreCaja
                 $v = (float) $data['totales']['total_ventas'];
                 $e = (float) $data['totales']['total_efectivo'];
                 $d = (float) $data['totales']['total_digital'];
-                $stmtIns->bind_param("ssssdd", $idReporte, $idAdmin, $fecha, $v, $e, $d);
+                $stmtIns->bind_param("sssddd", $idReporte, $idAdmin, $fecha, $v, $e, $d);
                 $stmtIns->execute();
                 $stmtIns->close();
             }
@@ -159,7 +159,7 @@ class CierreCaja
                 $base = (float) $liq['base_efectivo_asignada'];
                 $rec = (float) $liq['recaudo'];
                 $tot = (float) $liq['total_entregar'];
-                $stmtLiq->bind_param("ssssddd", $idL, $idReporte, $liq['id_domiciliario'], $base, $rec, $tot);
+                $stmtLiq->bind_param("sssddd", $idL, $idReporte, $liq['id_domiciliario'], $base, $rec, $tot);
                 $stmtLiq->execute();
                 $stmtLiq->close();
             }
