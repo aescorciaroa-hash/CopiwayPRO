@@ -22,7 +22,7 @@ if ($action === 'agregar') {
 
     if (!$capas) {
         $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'Burger vacia', 'message' => 'Agrega al menos un ingrediente.'];
-        redirect('/app/Views/client/creador.php');
+        redirect('/client/creador');
     }
 
     global $conn;
@@ -60,9 +60,9 @@ if ($action === 'agregar') {
     $carritoModel->agregar($idBase, $cantidad, $pers);
 
     $_SESSION['_flash'][] = ['type' => 'cart', 'title' => 'Copiway', 'message' => 'Hamburguesa personalizada agregada al carrito.'];
-    redirect('/app/Views/client/carrito.php');
+    redirect('/client/carrito');
 }
 else {
-    redirect('/app/Views/client/creador.php');
+    redirect('/client/creador');
 }
 

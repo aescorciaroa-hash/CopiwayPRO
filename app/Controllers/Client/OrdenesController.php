@@ -24,6 +24,6 @@ if ($action === 'detalle') {
     echo json_encode($p);
     exit;
 } else {
-    redirect('/app/Views/client/ordenes.php');
+    redirect('/client/ordenes');
 }
 

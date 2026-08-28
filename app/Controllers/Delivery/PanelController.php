@@ -20,10 +20,10 @@ if ($action === 'estacionLogin') {
     $pin = $_POST['pin'] ?? '';
     if (hash_equals((string) $configModel->value('pin_estacion_domiciliario'), $pin)) {
         Session::set('estacion_domi_ok', true);
-        redirect('/app/Views/delivery/index.php');
+        redirect('/delivery');
     }
     $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'PIN incorrecto', 'message' => 'Usuario o contraseña incorrectos.'];
-    redirect('/app/Views/delivery/estacion.php');
+    redirect('/delivery/estacion');
 }
 elseif ($action === 'disponibilidad') {
     $estado = ($_POST['estado'] ?? '') === 'disponible' ? 'disponible' : 'desconectado';
@@ -35,7 +35,7 @@ elseif ($action === 'disponibilidad') {
         $stmt->execute();
         $stmt->close();
     }
-    redirect('/app/Views/delivery/index.php');
+    redirect('/delivery');
 }
 elseif ($action === 'tomar') {
     $id = $_GET['id'] ?? $_POST['id'] ?? '';
@@ -54,7 +54,7 @@ elseif ($action === 'tomar') {
 
         $_SESSION['_flash'][] = ['type' => 'success', 'title' => 'Pedido Asignado', 'message' => 'Tomaste el pedido correctamente.'];
     }
-    redirect('/app/Views/delivery/index.php');
+    redirect('/delivery');
 }
 elseif ($action === 'iniciarRuta') {
     $id = $_GET['id'] ?? $_POST['id'] ?? '';
@@ -62,7 +62,7 @@ elseif ($action === 'iniciarRuta') {
         $servicioModel->cambiarEstado($id, 'en_camino');
         $_SESSION['_flash'][] = ['type' => 'whatsapp', 'title' => 'Ruta Iniciada', 'message' => 'Se notifico al cliente que su pedido va en camino.'];
     }
-    redirect('/app/Views/delivery/index.php');
+    redirect('/delivery');
 }
 elseif ($action === 'entregar') {
     $id  = $_GET['id'] ?? $_POST['id'] ?? '';
@@ -72,7 +72,7 @@ elseif ($action === 'entregar') {
     if ($p) {
         if (!hash_equals((string) $p['pin_entrega'], $pin)) {
             $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'PIN incorrecto', 'message' => 'El PIN de 4 digitos no coincide.'];
-            redirect('/app/Views/delivery/index.php');
+            redirect('/delivery');
         }
         if (($p['pago_metodo'] ?? '') === 'efectivo') {
             $servicioModel->aprobarPago($id);
@@ -80,9 +80,9 @@ elseif ($action === 'entregar') {
         $servicioModel->cambiarEstado($id, 'entregado');
         $_SESSION['_flash'][] = ['type' => 'success', 'title' => 'Pedido Entregado', 'message' => 'El pedido fue entregado con exito.'];
     }
-    redirect('/app/Views/delivery/index.php');
+    redirect('/delivery');
 }
 else {
-    redirect('/app/Views/delivery/index.php');
+    redirect('/delivery');
 }
 

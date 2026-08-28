@@ -37,7 +37,7 @@ elseif ($action === 'guardarProducto') {
 
     if (empty($nombre) || empty($idCat)) {
         $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'Error de formulario', 'message' => 'Por favor indica el nombre y la categoria del producto.'];
-        redirect('/app/Views/admin/menu/index.php');
+        redirect('/admin/menu');
     }
 
     $id = $productoModel->guardar([
@@ -59,7 +59,7 @@ elseif ($action === 'guardarProducto') {
     $productoModel->guardarReceta($id, $items);
 
     $_SESSION['_flash'][] = ['type' => 'success', 'title' => 'Producto Guardado', 'message' => 'El producto se ha guardado exitosamente.'];
-    redirect('/app/Views/admin/menu/index.php');
+    redirect('/admin/menu');
 }
 elseif ($action === 'cambiarEstado') {
     $id = $_GET['id'] ?? $_POST['id'] ?? '';
@@ -69,7 +69,7 @@ elseif ($action === 'cambiarEstado') {
         $productoModel->cambiarEstado($id, $nuevo);
         $_SESSION['_flash'][] = ['type' => 'inventory', 'title' => 'Estado del Producto', 'message' => "Estado actualizado a {$nuevo}."];
     }
-    redirect('/app/Views/admin/menu/index.php');
+    redirect('/admin/menu');
 }
 elseif ($action === 'eliminarProducto') {
     $id = $_GET['id'] ?? $_POST['id'] ?? '';
@@ -79,7 +79,7 @@ elseif ($action === 'eliminarProducto') {
     } else {
         $_SESSION['_flash'][] = ['type' => 'warning', 'title' => 'No se puede eliminar', 'message' => 'El producto tiene historial de ventas.'];
     }
-    redirect('/app/Views/admin/menu/index.php');
+    redirect('/admin/menu');
 }
 elseif ($action === 'crearCategoria') {
     $nombre = trim($_POST['nombre'] ?? '');
@@ -87,15 +87,15 @@ elseif ($action === 'crearCategoria') {
         $categoriaModel->crear(['nombre' => $nombre, 'ambito' => 'menu']);
         $_SESSION['_flash'][] = ['type' => 'success', 'title' => 'Categoria Creada', 'message' => 'La categoria se agrego al menu.'];
     }
-    redirect('/app/Views/admin/menu/index.php');
+    redirect('/admin/menu');
 }
 elseif ($action === 'eliminarCategoria') {
     $id = $_GET['id'] ?? $_POST['id'] ?? '';
     $categoriaModel->eliminar($id);
     $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'Categoria Eliminada', 'message' => 'La categoria fue eliminada.'];
-    redirect('/app/Views/admin/menu/index.php');
+    redirect('/admin/menu');
 }
 else {
-    redirect('/app/Views/admin/menu/index.php');
+    redirect('/admin/menu');
 }
 

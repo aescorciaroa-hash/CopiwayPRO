@@ -26,6 +26,6 @@ if ($action === 'historial') {
     echo json_encode(['cliente' => $cliente ?: ['nombre' => ''], 'pedidos' => $pedidos]);
     exit;
 } else {
-    redirect('/app/Views/admin/clientes/index.php');
+    redirect('/admin/clientes');
 }
 

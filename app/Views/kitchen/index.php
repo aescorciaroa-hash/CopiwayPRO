@@ -10,7 +10,7 @@ $cols = [
     <!-- Header Superior KDS -->
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-            <span class="inline-flex items-center gap-2 bg-slate-100/90 border border-slate-200/60 rounded-full px-4 py-2 text-xs font-extrabold text-slate-700 shadow-sm">
+            <span class="inline-flex items-center gap-2 bg-slate-100/90 dark:bg-stone-800 dark:border-stone-700 border border-slate-200/60 rounded-full px-4 py-2 text-xs font-extrabold text-slate-700 shadow-sm">
                 <i data-lucide="rotate-cw" class="w-4 h-4 text-amber-500 animate-spin-slow"></i>
                 TIEMPO PROM: <span class="text-slate-900 font-black">8.5 MIN</span>
             </span>
@@ -31,33 +31,6 @@ $cols = [
         </div>
     </div>
 
-    <!-- RF-59: Resumen agregado por producto (preparación por lotes) -->
-    <?php if (!empty($resumen)): ?>
-        <div class="mb-6 bg-white rounded-3xl border border-slate-100/90 shadow-sm p-4">
-            <p class="text-xs font-black uppercase text-slate-400 mb-2">Total a preparar (por lotes)</p>
-            <div class="flex flex-wrap gap-2">
-                <?php foreach ($resumen as $nombre => $cant): ?>
-                    <span class="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-full px-3 py-1.5 text-sm font-bold text-slate-700">
-                        <span class="text-[#ff6600] font-black"><?= (int) $cant ?>x</span> <?= e($nombre) ?>
-                    </span>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    <?php endif; ?>
-
-    <!-- RF-60: Inventario crítico visible en cocina -->
-    <?php if (!empty($criticos)): ?>
-        <div class="mb-6 bg-red-50 border border-red-200 rounded-3xl p-4 flex items-start gap-3">
-            <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500 shrink-0 mt-0.5"></i>
-            <div>
-                <p class="text-xs font-black uppercase text-red-600 mb-1">Insumos por agotarse</p>
-                <p class="text-sm font-bold text-red-700">
-                    <?php foreach ($criticos as $i => $c): ?><?= $i ? ' · ' : '' ?><?= e($c['nombre']) ?> (<?= rtrim(rtrim(number_format((float) $c['cantidad_stock'], 2, '.', ''), '0'), '.') ?>)<?php endforeach; ?>
-                </p>
-            </div>
-        </div>
-    <?php endif; ?>
-
     <!-- Grid de 3 Columnas principales KDS -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
@@ -75,10 +48,10 @@ $cols = [
 
             <div class="space-y-4">
                 <?php foreach ($tablero['pendiente'] as $p): ?>
-                    <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100/90 space-y-4 hover:shadow-md transition">
+                    <div class="bg-white dark:bg-[#1a1a1a] rounded-3xl p-5 shadow-sm border border-slate-100/90 dark:border-stone-800 space-y-4 hover:shadow-md transition">
                         <div class="flex items-center justify-between">
                             <div>
-                                <span class="font-mono font-black text-xl text-slate-900 block"><?= e($p['codigo']) ?></span>
+                                <span class="font-mono font-black text-xl text-slate-900 dark:text-white block"><?= e($p['codigo']) ?></span>
                                 <span class="text-xs font-medium text-slate-400 flex items-center gap-1 mt-0.5">
                                     <i data-lucide="clock" class="w-3.5 h-3.5"></i> Hace <?= (int) $p['minutos'] ?> min
                                 </span>
@@ -88,10 +61,10 @@ $cols = [
 
                         <div class="space-y-2">
                             <?php foreach ($p['lineas'] as $l): ?>
-                                <div class="bg-slate-50/70 rounded-2xl p-3.5 border border-slate-100 flex items-start gap-3">
+                                <div class="bg-slate-50/70 dark:bg-stone-800/60 rounded-2xl p-3.5 border border-slate-100 dark:border-stone-800 flex items-start gap-3">
                                     <span class="font-extrabold text-[#ff6600] text-sm shrink-0"><?= (int) $l['cantidad'] ?>x</span>
                                     <div>
-                                        <p class="font-bold text-slate-800 text-sm leading-snug"><?= e($l['nombre']) ?></p>
+                                        <p class="font-bold text-slate-800 dark:text-slate-100 text-sm leading-snug"><?= e($l['nombre']) ?></p>
                                         <?php if ($l['personalizaciones']): ?>
                                             <p class="text-xs text-slate-500 mt-1"><?= mods_html($l['personalizaciones']) ?></p>
                                         <?php endif; ?>
@@ -110,7 +83,7 @@ $cols = [
                 <?php endforeach; ?>
 
                 <?php if (empty($tablero['pendiente'])): ?>
-                    <div class="bg-white rounded-3xl p-10 text-center border border-slate-100/80 flex flex-col items-center justify-center text-slate-400 min-h-[280px]">
+                    <div class="bg-white dark:bg-[#1a1a1a] rounded-3xl p-10 text-center border border-slate-100/80 dark:border-stone-800 flex flex-col items-center justify-center text-slate-400 min-h-[280px]">
                         <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center mb-3">
                             <i data-lucide="dollar-sign" class="w-6 h-6"></i>
                         </div>
@@ -131,7 +104,7 @@ $cols = [
 
             <div class="space-y-4">
                 <?php foreach ($tablero['en_preparacion'] as $p): $tarde = (int) $p['minutos'] >= 15; ?>
-                    <div class="bg-white rounded-3xl p-5 shadow-md space-y-4 relative overflow-hidden <?= $tarde ? 'border-2 border-red-500 animate-pulse' : 'border border-slate-100/90' ?>">
+                    <div class="bg-white dark:bg-[#1a1a1a] rounded-3xl p-5 shadow-md space-y-4 relative overflow-hidden <?= $tarde ? 'border-2 border-red-500 animate-pulse' : 'border border-slate-100/90' ?>">
                         <div class="flex items-center justify-between">
                             <div>
                                 <span class="font-mono font-black text-xl <?= $tarde ? 'text-red-600' : 'text-slate-900' ?> block"><?= e($p['codigo']) ?></span>
@@ -144,10 +117,10 @@ $cols = [
 
                         <div class="space-y-2">
                             <?php foreach ($p['lineas'] as $l): ?>
-                                <div class="bg-slate-50/70 rounded-2xl p-3.5 border border-slate-100 flex items-start gap-3">
+                                <div class="bg-slate-50/70 dark:bg-stone-800/60 rounded-2xl p-3.5 border border-slate-100 dark:border-stone-800 flex items-start gap-3">
                                     <span class="font-extrabold text-[#ff6600] text-sm shrink-0"><?= (int) $l['cantidad'] ?>x</span>
                                     <div>
-                                        <p class="font-bold text-slate-800 text-sm leading-snug"><?= e($l['nombre']) ?></p>
+                                        <p class="font-bold text-slate-800 dark:text-slate-100 text-sm leading-snug"><?= e($l['nombre']) ?></p>
                                         <?php if ($l['personalizaciones']): ?>
                                             <p class="text-xs text-slate-500 mt-1"><?= mods_html($l['personalizaciones']) ?></p>
                                         <?php endif; ?>
@@ -172,7 +145,7 @@ $cols = [
                 <?php endforeach; ?>
 
                 <?php if (empty($tablero['en_preparacion'])): ?>
-                    <div class="bg-white rounded-3xl p-12 text-center border border-slate-100/80 flex flex-col items-center justify-center text-slate-300 min-h-[300px]">
+                    <div class="bg-white dark:bg-[#1a1a1a] rounded-3xl p-12 text-center border border-slate-100/80 dark:border-stone-800 flex flex-col items-center justify-center text-slate-300 min-h-[300px]">
                         <i data-lucide="utensils-crossed" class="w-12 h-12 mb-3 text-slate-300 stroke-[1.5]"></i>
                         <p class="text-sm font-semibold text-slate-400">Sin pedidos en curso</p>
                     </div>
@@ -194,10 +167,10 @@ $cols = [
 
             <div class="space-y-4">
                 <?php foreach ($tablero['listo'] as $p): ?>
-                    <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100/90 space-y-4 hover:shadow-md transition">
+                    <div class="bg-white dark:bg-[#1a1a1a] rounded-3xl p-5 shadow-sm border border-slate-100/90 dark:border-stone-800 space-y-4 hover:shadow-md transition">
                         <div class="flex items-center justify-between">
                             <div>
-                                <span class="font-mono font-black text-xl text-slate-900 block"><?= e($p['codigo']) ?></span>
+                                <span class="font-mono font-black text-xl text-slate-900 dark:text-white block"><?= e($p['codigo']) ?></span>
                                 <span class="text-xs font-medium text-slate-400 flex items-center gap-1 mt-0.5">
                                     <i data-lucide="clock" class="w-3.5 h-3.5"></i> Hace <?= (int) $p['minutos'] ?> min
                                 </span>
@@ -213,10 +186,10 @@ $cols = [
 
                         <div class="space-y-2">
                             <?php foreach ($p['lineas'] as $l): ?>
-                                <div class="bg-slate-50/70 rounded-2xl p-3.5 border border-slate-100 flex items-start gap-3">
+                                <div class="bg-slate-50/70 dark:bg-stone-800/60 rounded-2xl p-3.5 border border-slate-100 dark:border-stone-800 flex items-start gap-3">
                                     <span class="font-extrabold text-[#ff6600] text-sm shrink-0"><?= (int) $l['cantidad'] ?>x</span>
                                     <div>
-                                        <p class="font-bold text-slate-800 text-sm leading-snug"><?= e($l['nombre']) ?></p>
+                                        <p class="font-bold text-slate-800 dark:text-slate-100 text-sm leading-snug"><?= e($l['nombre']) ?></p>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -229,7 +202,7 @@ $cols = [
                 <?php endforeach; ?>
 
                 <?php if (empty($tablero['listo'])): ?>
-                    <div class="bg-white rounded-3xl p-10 text-center border border-slate-100/80 flex flex-col items-center justify-center text-slate-400 min-h-[280px]">
+                    <div class="bg-white dark:bg-[#1a1a1a] rounded-3xl p-10 text-center border border-slate-100/80 dark:border-stone-800 flex flex-col items-center justify-center text-slate-400 min-h-[280px]">
                         <i data-lucide="package-check" class="w-12 h-12 mb-3 text-slate-300 stroke-[1.5]"></i>
                         <p class="text-sm font-semibold text-slate-400">Sin pedidos listos</p>
                     </div>

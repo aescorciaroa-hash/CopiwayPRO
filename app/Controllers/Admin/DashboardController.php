@@ -10,5 +10,5 @@ require_once __DIR__ . '/../../Models/Pedido.php';
 require_once __DIR__ . '/../../Models/Empleado.php';
 require_once __DIR__ . '/../../Models/Configuracion.php';
 
-redirect('/app/Views/admin/dashboard.php');
+redirect('/admin');
 

@@ -11,6 +11,7 @@ $nav = [
     ['/admin/ajustes',   'settings',          'Ajustes y Caja'],
 ];
 $current = current_path();
+$_auth = Auth::user() ?? [];
 $active = fn($path) => $path === '/admin'
     ? ($current === '/admin' || $current === '/admin/')
     : str_starts_with($current, $path);

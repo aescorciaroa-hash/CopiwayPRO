@@ -22,7 +22,7 @@ if ($action === 'guardarInsumo') {
 
     if (empty($nombre) || empty($catId) || $cantidad <= 0) {
         $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'Error de validacion', 'message' => 'Por favor llena todos los campos obligatorios.'];
-        redirect('/app/Views/admin/inventario/index.php');
+        redirect('/admin/inventario');
     }
 
     $costoUnit = $cantidad > 0 ? round($costoTot / $cantidad, 2) : 0;
@@ -41,7 +41,7 @@ if ($action === 'guardarInsumo') {
 
     $ingredienteModel->moverStock($id, 'entrada', $cantidad, 'Registro inicial de compra', Auth::id());
     $_SESSION['_flash'][] = ['type' => 'success', 'title' => 'Insumo Registrado', 'message' => 'El insumo ha sido guardado exitosamente.'];
-    redirect('/app/Views/admin/inventario/index.php');
+    redirect('/admin/inventario');
 }
 elseif ($action === 'ajustar') {
     $id     = $_GET['id'] ?? $_POST['id'] ?? '';
@@ -58,9 +58,9 @@ elseif ($action === 'ajustar') {
         }
         $_SESSION['_flash'][] = ['type' => 'inventory', 'title' => 'Stock Actualizado', 'message' => 'La cantidad del insumo fue actualizada.'];
     }
-    redirect('/app/Views/admin/inventario/index.php');
+    redirect('/admin/inventario');
 }
 else {
-    redirect('/app/Views/admin/inventario/index.php');
+    redirect('/admin/inventario');
 }
 

@@ -1,7 +1,7 @@
 # 03 · Estructura de carpetas
 
 ```
-Copiway/
+Copiway2/
 ├── public/                  ← ÚNICA carpeta expuesta al navegador
 │   ├── index.php            ← Punto de entrada: carga conexión y vistas directas
 │   ├── router.php           ← Servidor de pruebas PHP
@@ -50,7 +50,12 @@ Copiway/
 │   ├── seed.sql            ← Datos de prueba
 │   └── install.php         ← Script de instalación automática
 │
-└── storage/                ← Archivos temporales o de registro
+├── storage/                ← Archivos temporales o de registro (logs)
+│
+├── Documentacion/          ← Entrega SENA: SQL, diagramas, casos de uso, mockups, RF/RNF
+└── Documentacion-Codigo/   ← Documentación del código
+    ├── guia/               ← Estos 15 tutoriales (para estudiar / examen)
+    └── por-archivo/        ← Explicación archivo por archivo
 ```
 
 ## La regla de oro: `public/` es la única puerta

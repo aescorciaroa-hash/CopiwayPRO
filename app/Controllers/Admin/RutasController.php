@@ -7,5 +7,5 @@ require_once __DIR__ . '/../../Core/helpers.php';
 require_once __DIR__ . '/../../Models/Pedido.php';
 require_once __DIR__ . '/../../Models/Configuracion.php';
 
-redirect('/app/Views/admin/rutas/index.php');
+redirect('/admin/rutas');
 

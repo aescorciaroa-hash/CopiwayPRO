@@ -38,7 +38,7 @@ if ($action === 'agregar') {
 
     if (!$id || $productoModel->estaAgotado($id)) {
         $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'Producto no disponible', 'message' => 'Este producto esta agotado por ahora.'];
-        redirect('/app/Views/client/catalogo.php');
+        redirect('/client');
     }
 
     $pers = personalizacionesDesdePost($ingModel);
@@ -56,20 +56,20 @@ elseif ($action === 'actualizar') {
         : null;
     $carritoModel->actualizar($key, $cantidad, $pers);
     $_SESSION['_flash'][] = ['type' => 'cart', 'title' => 'Carrito Copiway', 'message' => 'Carrito actualizado.'];
-    redirect('/app/Views/client/carrito.php');
+    redirect('/client/carrito');
 }
 elseif ($action === 'quitar') {
     $key = $_POST['key'] ?? $_GET['key'] ?? '';
     $carritoModel->quitar($key);
     $_SESSION['_flash'][] = ['type' => 'cart', 'title' => 'Carrito Copiway', 'message' => 'Producto eliminado del carrito.'];
-    redirect('/app/Views/client/carrito.php');
+    redirect('/client/carrito');
 }
 elseif ($action === 'vaciar') {
     $carritoModel->vaciar();
     $_SESSION['_flash'][] = ['type' => 'cart', 'title' => 'Carrito Copiway', 'message' => 'Se han eliminado todos los productos del carrito.'];
-    redirect('/app/Views/client/carrito.php');
+    redirect('/client/carrito');
 }
 else {
-    redirect('/app/Views/client/carrito.php');
+    redirect('/client/carrito');
 }
 

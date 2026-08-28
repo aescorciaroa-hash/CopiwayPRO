@@ -25,7 +25,7 @@ if ($action === 'recomprar') {
         foreach ($lineas as $l) {
             if ($productoModel->estaAgotado($l['id_producto'])) {
                 $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'Stock No Disponible', 'message' => "No se puede duplicar el pedido: {$l['nombre']} se encuentra agotado."];
-                redirect('/app/Views/client/historial.php');
+                redirect('/client/historial');
             }
         }
         foreach ($lineas as $l) {
@@ -41,9 +41,9 @@ if ($action === 'recomprar') {
             $carritoModel->agregar($l['id_producto'], (int) $l['cantidad'], $pers);
         }
         $_SESSION['_flash'][] = ['type' => 'cart', 'title' => 'Recompra en 1-Clic', 'message' => 'Pedido duplicado en tu carrito.'];
-        redirect('/app/Views/client/carrito.php');
+        redirect('/client/carrito');
     }
-    redirect('/app/Views/client/historial.php');
+    redirect('/client/historial');
 }
 elseif ($action === 'resena') {
     $id = $_GET['id'] ?? $_POST['id'] ?? '';
@@ -72,9 +72,9 @@ elseif ($action === 'resena') {
         }
         $_SESSION['_flash'][] = ['type' => 'success', 'title' => 'Reseña Registrada', 'message' => 'Muchas gracias por tu valoracion.'];
     }
-    redirect('/app/Views/client/historial.php');
+    redirect('/client/historial');
 }
 else {
-    redirect('/app/Views/client/historial.php');
+    redirect('/client/historial');
 }
 

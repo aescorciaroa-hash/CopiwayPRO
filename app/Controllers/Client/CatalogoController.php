@@ -26,6 +26,6 @@ if ($action === 'personalizar') {
     echo json_encode($p);
     exit;
 } else {
-    redirect('/app/Views/client/catalogo.php');
+    redirect('/client');
 }
 

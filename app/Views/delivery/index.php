@@ -9,7 +9,7 @@ $pedidoIdActivo = $primerPedido['id_pedido'] ?? '';
 <div class="w-full h-full flex flex-col md:flex-row overflow-hidden relative font-sans text-slate-800" x-data="{ pinOpen: false, pedidoId: '<?= e($pedidoIdActivo) ?>', pin: '' }">
 
     <!-- SIDEBAR IZQUIERDO: LISTA DE PEDIDOS -->
-    <aside class="w-full md:w-[380px] shrink-0 bg-white border-r border-slate-200/80 flex flex-col h-full overflow-y-auto p-5 z-10">
+    <aside class="w-full md:w-[380px] shrink-0 bg-white dark:bg-[#161616] border-r border-slate-200/80 dark:border-stone-800 flex flex-col h-full overflow-y-auto p-5 z-10">
         
         <!-- Header superior Sidebar -->
         <div class="flex items-center justify-between mb-5">
@@ -17,11 +17,12 @@ $pedidoIdActivo = $primerPedido['id_pedido'] ?? '';
                 <span class="w-9 h-9 rounded-xl bg-[#ff6600] text-white flex items-center justify-center shadow-md shadow-orange-500/20">
                     <i data-lucide="navigation" class="w-5 h-5"></i>
                 </span>
-                <span class="font-black text-xl text-slate-900 tracking-tight">Copiway<span class="text-[#ff6600]">PRO</span></span>
+                <span class="font-black text-xl text-slate-900 dark:text-white tracking-tight">Copiway<span class="text-[#ff6600]">PRO</span></span>
             </div>
             <div class="flex items-center gap-2">
-                <button onclick="document.documentElement.classList.toggle('dark')" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 transition">
-                    <i data-lucide="moon" class="w-5 h-5"></i>
+                <button onclick="Copiway.toggleTheme()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition">
+                    <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
+                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block text-amber-400"></i>
                 </button>
                 <form method="post" action="<?= url('/logout') ?>">
                     <?= csrf_field() ?>
@@ -33,7 +34,7 @@ $pedidoIdActivo = $primerPedido['id_pedido'] ?? '';
         </div>
 
         <!-- Interruptor de Estado / Disponibilidad -->
-        <div class="bg-slate-50 border border-slate-100 rounded-2xl p-3.5 mb-5 flex items-center justify-between">
+        <div class="bg-slate-50 dark:bg-stone-800/60 border border-slate-100 dark:border-stone-800 rounded-2xl p-3.5 mb-5 flex items-center justify-between">
             <span class="font-bold text-sm text-slate-700">Estado</span>
             <form method="post" action="<?= url('/delivery/disponibilidad') ?>">
                 <?= csrf_field() ?>
@@ -48,14 +49,14 @@ $pedidoIdActivo = $primerPedido['id_pedido'] ?? '';
         </div>
 
         <!-- Título Sección -->
-        <h2 class="font-extrabold text-slate-900 text-lg mb-4">Pedidos Disponibles</h2>
+        <h2 class="font-extrabold text-slate-900 dark:text-white text-lg mb-4">Pedidos Disponibles</h2>
 
         <!-- Lista de Entregas del Domiciliario -->
         <div class="space-y-4 flex-1">
             
             <!-- Pedidos Activos (Mis Entregas) -->
             <?php foreach ($mios as $p): ?>
-                <div class="bg-white rounded-3xl border-2 border-[#ff6600] shadow-md overflow-hidden space-y-3">
+                <div class="bg-white dark:bg-[#1a1a1a] rounded-3xl border-2 border-[#ff6600] shadow-md overflow-hidden space-y-3">
                     <?php if ($p['pago_metodo'] === 'efectivo'): ?>
                         <div class="bg-[#ff6600] text-white text-center text-xs font-black py-2 tracking-wide uppercase">
                             ¡COBRAR EN EFECTIVO: <?= money($p['total']) ?>!
@@ -64,7 +65,7 @@ $pedidoIdActivo = $primerPedido['id_pedido'] ?? '';
 
                     <div class="p-4 space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="font-mono font-black text-lg text-slate-900"><?= e($p['codigo']) ?></span>
+                            <span class="font-mono font-black text-lg text-slate-900 dark:text-white"><?= e($p['codigo']) ?></span>
                             <div class="text-right">
                                 <span class="font-black text-sm text-slate-900 block"><?= money($p['total']) ?></span>
                                 <span class="text-[10px] font-bold text-slate-400 uppercase"><?= e($p['pago_metodo']) ?></span>
@@ -81,7 +82,7 @@ $pedidoIdActivo = $primerPedido['id_pedido'] ?? '';
                         </p>
 
                         <!-- Items del pedido -->
-                        <div class="bg-slate-50/80 rounded-2xl p-3 space-y-1 text-xs font-semibold text-slate-700 border border-slate-100">
+                        <div class="bg-slate-50/80 dark:bg-stone-800/60 rounded-2xl p-3 space-y-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-stone-800">
                             <?php foreach ($p['lineas'] as $l): ?>
                                 <div class="flex justify-between">
                                     <span><?= (int) $l['cantidad'] ?>x <?= e($l['nombre']) ?></span>
@@ -101,11 +102,13 @@ $pedidoIdActivo = $primerPedido['id_pedido'] ?? '';
                         </form>
                         <?php endif; ?>
 
-                        <!-- Botón Contactar Cliente -->
+                        <!-- Botón Contactar Cliente (RF-68: solo mientras "En Camino") -->
+                        <?php if ($p['estado'] === 'en_camino'): ?>
                         <a href="https://wa.me/57<?= e($p['cliente_telefono']) ?>" target="_blank"
                            class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-2xl py-3 flex items-center justify-center gap-2 text-xs transition border border-emerald-200/50">
                             <i data-lucide="phone" class="w-4 h-4 text-emerald-500"></i> Contactar Cliente
                         </a>
+                        <?php endif; ?>
 
                         <!-- Acciones Rápidas -->
                         <div class="grid grid-cols-4 gap-2 pt-1">
@@ -131,7 +134,7 @@ $pedidoIdActivo = $primerPedido['id_pedido'] ?? '';
 
             <!-- Pedidos Disponibles para tomar -->
             <?php foreach ($disponibles as $p): ?>
-                <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden space-y-3">
+                <div class="bg-white dark:bg-[#1a1a1a] rounded-3xl border border-slate-200/80 dark:border-stone-800 shadow-sm overflow-hidden space-y-3">
                     <?php if ($p['pago_metodo'] === 'efectivo'): ?>
                         <div class="bg-[#ff6600] text-white text-center text-xs font-black py-2 tracking-wide uppercase">
                             ¡COBRAR EN EFECTIVO: <?= money($p['total']) ?>!
@@ -140,7 +143,7 @@ $pedidoIdActivo = $primerPedido['id_pedido'] ?? '';
 
                     <div class="p-4 space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="font-mono font-black text-lg text-slate-900"><?= e($p['codigo']) ?></span>
+                            <span class="font-mono font-black text-lg text-slate-900 dark:text-white"><?= e($p['codigo']) ?></span>
                             <span class="font-black text-sm text-slate-900"><?= money($p['total']) ?></span>
                         </div>
 

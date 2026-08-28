@@ -19,7 +19,7 @@ if ($action === 'actualizar') {
 
     if (empty($nombre) || empty($telefono)) {
         $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'Revisa el formulario', 'message' => 'Por favor completa todos los campos requeridos.'];
-        redirect('/app/Views/client/perfil.php');
+        redirect('/client/perfil');
     }
 
     $id = Auth::id();
@@ -33,7 +33,7 @@ if ($action === 'actualizar') {
         Auth::refresh(['nombre' => $nombre, 'telefono' => $telefono]);
         $_SESSION['_flash'][] = ['type' => 'success', 'title' => 'Perfil Actualizado', 'message' => 'Tus datos personales se guardaron correctamente.'];
     }
-    redirect('/app/Views/client/perfil.php');
+    redirect('/client/perfil');
 }
 elseif ($action === 'password') {
     $actual    = $_POST['actual'] ?? '';
@@ -52,12 +52,12 @@ elseif ($action === 'password') {
 
         if (!$row || !password_verify($actual, $row['contrasena'])) {
             $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'Contraseña incorrecta', 'message' => 'La contraseña actual no coincide.'];
-            redirect('/app/Views/client/perfil.php');
+            redirect('/client/perfil');
         }
 
         if (strlen($nueva) < 6 || $nueva !== $confirmar) {
             $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'Revisa los datos', 'message' => 'La nueva contraseña debe tener 6+ caracteres y coincidir.'];
-            redirect('/app/Views/client/perfil.php');
+            redirect('/client/perfil');
         }
 
         $hash = password_hash($nueva, PASSWORD_BCRYPT);
@@ -68,9 +68,9 @@ elseif ($action === 'password') {
 
         $_SESSION['_flash'][] = ['type' => 'success', 'title' => 'Copiway', 'message' => 'Contraseña actualizada exitosamente.'];
     }
-    redirect('/app/Views/client/perfil.php');
+    redirect('/client/perfil');
 }
 else {
-    redirect('/app/Views/client/perfil.php');
+    redirect('/client/perfil');
 }
 

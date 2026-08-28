@@ -39,7 +39,7 @@ elseif ($action === 'crearManual') {
 
     if ($telefono === '' || $direccion === '' || !$ids) {
         $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'Datos incompletos', 'message' => 'Ingresa telefono, direccion y al menos un producto.'];
-        redirect('/app/Views/admin/comandas/index.php');
+        redirect('/admin/comandas');
     }
 
     $lineas = [];
@@ -62,7 +62,7 @@ elseif ($action === 'crearManual') {
 
     $cod = $pedidoModel->codigo($pedidoModel->find($idPedido));
     $_SESSION['_flash'][] = ['type' => 'success', 'title' => 'Pedido Manual', 'message' => "Pedido manual {$cod} creado y enviado a cocina."];
-    redirect('/app/Views/admin/comandas/index.php');
+    redirect('/admin/comandas');
 }
 elseif ($action === 'editarDireccion') {
     $id  = $_GET['id'] ?? $_POST['id'] ?? '';
@@ -71,9 +71,9 @@ elseif ($action === 'editarDireccion') {
         $servicioModel->editarDireccion($id, $dir);
         $_SESSION['_flash'][] = ['type' => 'success', 'title' => 'Direccion Modificada', 'message' => 'La direccion de entrega fue actualizada correctamente.'];
     }
-    redirect('/app/Views/admin/comandas/index.php');
+    redirect('/admin/comandas');
 }
 else {
-    redirect('/app/Views/admin/comandas/index.php');
+    redirect('/admin/comandas');
 }
 

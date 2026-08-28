@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="<?= e(Session::csrf()) ?>">
     <?php require dirname(__DIR__) . '/partials/head.php'; ?>
 </head>
-<body class="bg-[#f8fafc] text-slate-800 antialiased font-sans overflow-hidden">
+<body class="bg-[#f8fafc] dark:bg-[#0d0d0d] text-slate-800 dark:text-slate-200 antialiased font-sans overflow-hidden">
 <div class="h-screen w-screen flex overflow-hidden relative">
     <?= $content ?>
 </div>

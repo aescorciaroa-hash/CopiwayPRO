@@ -15,6 +15,7 @@ $nav = [
     ['/client/perfil',      'user-cog',         'Mi Perfil'],
 ];
 $current = current_path();
+$_auth = Auth::user() ?? [];
 $cartCount = $carritoModelLayout->cantidad();
 ?>
 <!DOCTYPE html>

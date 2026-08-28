@@ -19,10 +19,10 @@ if ($action === 'estacionLogin') {
     $pin = $_POST['pin'] ?? '';
     if (hash_equals((string) $configModel->value('pin_estacion_kds'), $pin)) {
         Session::set('estacion_cocina_ok', true);
-        redirect('/app/Views/kitchen/index.php');
+        redirect('/kitchen');
     }
     $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'PIN incorrecto', 'message' => 'Usuario o contraseña de estacion incorrectos.'];
-    redirect('/app/Views/kitchen/estacion.php');
+    redirect('/kitchen/estacion');
 }
 elseif ($action === 'preparar') {
     $id = $_GET['id'] ?? $_POST['id'] ?? '';
@@ -30,7 +30,7 @@ elseif ($action === 'preparar') {
         $servicioModel->cambiarEstado($id, 'en_preparacion', ['id_ayudante' => Auth::id()]);
         $_SESSION['_flash'][] = ['type' => 'cart', 'title' => 'Pedido en Preparación', 'message' => 'El pedido paso a preparacion.'];
     }
-    redirect('/app/Views/kitchen/index.php');
+    redirect('/kitchen');
 }
 elseif ($action === 'listo') {
     $id = $_GET['id'] ?? $_POST['id'] ?? '';
@@ -38,8 +38,8 @@ elseif ($action === 'listo') {
         $servicioModel->cambiarEstado($id, 'listo', ['id_ayudante' => Auth::id()]);
         $_SESSION['_flash'][] = ['type' => 'success', 'title' => 'Pedido Listo', 'message' => 'El pedido esta listo para despacho.'];
     }
-    redirect('/app/Views/kitchen/index.php');
+    redirect('/kitchen');
 }
 else {
-    redirect('/app/Views/kitchen/index.php');
+    redirect('/kitchen');
 }

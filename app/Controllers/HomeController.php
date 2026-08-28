@@ -13,5 +13,5 @@ $categoriaModel = new Categoria();
 $productos  = $productoModel->catalogo();
 $categorias = $categoriaModel->menu();
 
-redirect('/app/Views/home/index.php');
+redirect('/');
 

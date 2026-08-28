@@ -22,13 +22,13 @@ $pedidoModel   = new Pedido();
 
 if ($action === 'confirmar') {
     if (!$carritoModel->items()) {
-        redirect('/app/Views/client/carrito.php');
+        redirect('/client/carrito');
     }
 
     $estado = $configModel->estadoCocina();
     if (!$estado['abierta']) {
         $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'Cocina cerrada', 'message' => "El horario de atencion es {$estado['apertura']} - {$estado['cierre']}."];
-        redirect('/app/Views/client/checkout.php');
+        redirect('/client/checkout');
     }
 
     $direccion = trim($_POST['direccion'] ?? '');
@@ -36,7 +36,7 @@ if ($action === 'confirmar') {
 
     if ($direccion === '') {
         $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'Falta la direccion', 'message' => 'Ingresa una direccion de entrega.'];
-        redirect('/app/Views/client/checkout.php');
+        redirect('/client/checkout');
     }
 
     $cliente = $clienteModel->directorio();
@@ -57,9 +57,9 @@ if ($action === 'confirmar') {
     $carritoModel->vaciar();
     $cod = $pedidoModel->codigo($pedidoModel->find($idPedido));
     $_SESSION['_flash'][] = ['type' => 'success', 'title' => 'Pedido Confirmado', 'message' => "Tu orden {$cod} ha sido enviada a cocina."];
-    redirect('/app/Views/client/ordenes.php');
+    redirect('/client/ordenes');
 }
 else {
-    redirect('/app/Views/client/checkout.php');
+    redirect('/client/checkout');
 }
 

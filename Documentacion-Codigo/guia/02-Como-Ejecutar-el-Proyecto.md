@@ -3,7 +3,7 @@
 ## Requisitos
 
 - **Laragon** (trae Apache + MySQL + PHP).
-- El proyecto está en `C:\laragon\www\Copiway`.
+- El proyecto está en `C:\laragon\www\Copiway2`.
 - PHP 8.1, MySQL 8.
 
 ## Paso 1 · Iniciar los servicios
@@ -13,7 +13,7 @@ Abre Laragon y pulsa **"Iniciar todo"** (Apache + MySQL).
 ## Paso 2 · Crear la base de datos
 
 El proyecto trae un instalador que **crea la base de datos, las tablas, los triggers
-y datos de ejemplo**. En una terminal, dentro de `C:\laragon\www\Copiway`:
+y datos de ejemplo**. En una terminal, dentro de `C:\laragon\www\Copiway2`:
 
 ```bash
 php database/install.php
@@ -28,9 +28,11 @@ Esto ejecuta:
 
 ## Paso 3 · Abrir en el navegador
 
-- Con Laragon: `http://copiway.test`
-- Si lo abres como carpeta: `http://localhost/Copiway/public`
-  (y entonces pon `'base_url' => '/Copiway/public'` en `config/config.php`).
+- Con Laragon: `http://copiway2.test`
+- Si lo abres como carpeta: `http://localhost/Copiway2/public/`
+
+Las dos funcionan igual: la URL base se detecta sola en `app/Core/helpers.php`
+(`APP_BASE`), no hay que editar nada de `config/config.php`.
 
 ## Configuración de la conexión
 
@@ -77,9 +79,5 @@ servidor de pruebas; con Apache manda el `public/.htaccess`.
 
 ## El modo debug
 
-En `config/config.php`, `'debug' => true`:
-- Muestra los errores de PHP en pantalla (útil para desarrollar).
-- Activa una ruta de atajo `/_dev/login/{correo}` para iniciar sesión sin formulario
-  (solo para pruebas rápidas).
-
-**Para producción se pone `'debug' => false`**.
+En `config/config.php`, `'debug' => true` deja ver los errores de PHP en pantalla
+(útil para desarrollar). **Para producción se pone `'debug' => false`**.

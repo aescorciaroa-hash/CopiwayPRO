@@ -37,40 +37,40 @@ elseif ($action === 'crear') {
 
     if (empty($nombre) || empty($correo) || empty($contrasena)) {
         $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'Revisa el formulario', 'message' => 'Llene todos los campos obligatorios.'];
-        redirect('/app/Views/admin/personal/index.php');
+        redirect('/admin/personal');
     }
 
     if ($usuarioModel->existeCorreoOTelefono($correo, $telefono)) {
         $_SESSION['_flash'][] = ['type' => 'danger', 'title' => 'Duplicado', 'message' => 'Ese correo o telefono ya esta en uso.'];
-        redirect('/app/Views/admin/personal/index.php');
+        redirect('/admin/personal');
     }
 
     $adminId = Auth::id() ?? 'admin';
     $empleadoModel->crear($rol, $_POST, $adminId);
 
     $_SESSION['_flash'][] = ['type' => 'staff', 'title' => 'Colaborador Registrado', 'message' => 'El empleado ha sido creado exitosamente.'];
-    redirect('/app/Views/admin/personal/index.php');
+    redirect('/admin/personal');
 }
 elseif ($action === 'actualizar') {
     $rol = $_GET['rol'] ?? $_POST['rol'] ?? 'cocina';
     $id  = $_GET['id'] ?? $_POST['id'] ?? '';
     $empleadoModel->actualizar($rol, $id, $_POST);
     $_SESSION['_flash'][] = ['type' => 'staff', 'title' => 'Colaborador Actualizado', 'message' => 'Los datos del empleado han sido actualizados correctamente.'];
-    redirect('/app/Views/admin/personal/index.php');
+    redirect('/admin/personal');
 }
 elseif ($action === 'baja') {
     $rol = $_GET['rol'] ?? $_POST['rol'] ?? 'cocina';
     $id  = $_GET['id'] ?? $_POST['id'] ?? '';
     $empleadoModel->darDeBaja($rol, $id);
     $_SESSION['_flash'][] = ['type' => 'staff', 'title' => 'Colaborador Dado de Baja', 'message' => 'El acceso del empleado fue revocado.'];
-    redirect('/app/Views/admin/personal/index.php');
+    redirect('/admin/personal');
 }
 elseif ($action === 'reactivar') {
     $rol = $_GET['rol'] ?? $_POST['rol'] ?? 'cocina';
     $id  = $_GET['id'] ?? $_POST['id'] ?? '';
     $empleadoModel->reactivar($rol, $id);
     $_SESSION['_flash'][] = ['type' => 'staff', 'title' => 'Colaborador Reactivado', 'message' => 'El empleado vuelve a tener acceso.'];
-    redirect('/app/Views/admin/personal/index.php');
+    redirect('/admin/personal');
 }
 elseif ($action === 'eliminar') {
     $rol = $_GET['rol'] ?? $_POST['rol'] ?? 'cocina';
@@ -81,9 +81,9 @@ elseif ($action === 'eliminar') {
     } else {
         $_SESSION['_flash'][] = ['type' => 'warning', 'title' => 'No se puede eliminar', 'message' => 'El empleado tiene historial de pedidos.'];
     }
-    redirect('/app/Views/admin/personal/index.php');
+    redirect('/admin/personal');
 }
 else {
-    redirect('/app/Views/admin/personal/index.php');
+    redirect('/admin/personal');
 }
 

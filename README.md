@@ -13,25 +13,25 @@ Sin paso de compilación: corre directo en Laragon/Apache.
 
 ## Instalación
 
-1. Copia el proyecto en `C:\laragon\www\Copiway`.
+1. Copia el proyecto en `C:\laragon\www\Copiway2`.
 2. Inicia **Apache** y **MySQL** desde Laragon.
 3. Crea la base de datos y los datos de ejemplo:
 
    ```
-   cd C:\laragon\www\Copiway
+   cd C:\laragon\www\Copiway2
    php database/install.php
    ```
 
    Esto crea la base `hamburguer_copiway`, carga el esquema (tablas + triggers)
    y datos de prueba (`database/seed.sql`).
 
-4. Abre el proyecto en el navegador:
-   - Con dominio Laragon: **http://copiway.test**
-   - Con localhost: **http://localhost/Copiway/public/**
-     (en este caso edita `config/config.php` → `app.base_url = '/Copiway/public'`)
+4. Abre el proyecto en el navegador (cualquiera de las dos funciona igual):
+   - Con dominio Laragon: **http://copiway2.test**
+   - Con localhost: **http://localhost/Copiway2/public/**
 
-> Si Laragon apunta el DocumentRoot a la raíz del proyecto en vez de `/public`,
-> el archivo `.htaccess` de la raíz reenvía todo a `public/` automáticamente.
+> La URL base se detecta sola (`app/Core/helpers.php` → `APP_BASE`), así que no hay
+> que editar nada de configuración según cómo abras el proyecto. Si Laragon apunta el
+> DocumentRoot a la raíz en vez de `/public`, el `.htaccess` de la raíz reenvía a `public/`.
 
 ## Cuentas de prueba
 
@@ -54,15 +54,24 @@ Por defecto: `127.0.0.1:3306`, usuario `root`, sin contraseña (Laragon estánda
 ## Estructura
 
 ```
-config/database.php  Conexión global MySQLi ($conn)
-config/config.php    Configuración de la app (URL base, zona horaria)
+config/              database.php (conexión MySQLi $conn) + config.php (app)
 database/            schema.sql, seed.sql, install.php
-public/              Punto de entrada (index.php) + assets
-app/Core/            Helpers globales, sesión, autenticación y períodos
-app/Controllers/     Scripts de controladores por módulo (Admin, Client, Kitchen, Delivery)
-app/Models/          Clases de modelo con consultas preparadas MySQLi
-app/Views/           Plantillas PHP y layouts tradicionales
+public/              index.php (front controller + rutas) + router.php + assets/
+app/Core/            helpers, Session, Auth, Periodo
+app/Controllers/     un archivo por módulo (Admin/, Client/, Kitchen/, Delivery/, AuthController)
+app/Models/          clases de datos con consultas preparadas MySQLi
+app/Views/           plantillas PHP: por rol (admin/ client/ kitchen/ delivery/) + layouts/ + partials/
+storage/             logs (ignorado por git)
+
+Documentacion/            Entrega SENA: SQL, diagramas ER/clases, casos de uso, mockups, RF/RNF
+Documentacion-Codigo/
+  ├── guia/               15 tutoriales para estudiar el código (MVC, seguridad, reglas de negocio…)
+  └── por-archivo/         explicación archivo por archivo
 ```
+
+Todo el enrutado vive en `public/index.php`: un guardia de acceso por rol (RBAC) + login
+de estación en dos pasos para Cocina/Domiciliario, luego el despacho a controladores (POST /
+acciones AJAX) y el render de vistas (GET).
 
 ## Módulos implementados
 

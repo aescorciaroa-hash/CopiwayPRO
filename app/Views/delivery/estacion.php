@@ -33,9 +33,10 @@
     </div>
 
     <!-- Título y Subtítulo -->
-    <div class="text-center mb-8">
+    <div class="text-center mb-6">
         <h1 class="text-2xl font-black text-slate-900 tracking-tight">Copiway<span class="text-[#ff6600]">PRO</span></h1>
         <p class="text-slate-500 font-semibold text-sm mt-0.5">Panel de Domiciliario</p>
+        <p class="text-slate-400 text-xs mt-1.5">Segundo paso: ingresa el PIN de la estación para desbloquear el panel.</p>
     </div>
 
     <?php foreach (($_flash ?? Session::pullFlash()) as $f): ?>
@@ -55,19 +56,21 @@
         </div>
 
         <div>
-            <label class="block text-left text-xs font-bold text-slate-700 mb-1.5">Contraseña</label>
-            <input type="password" name="pin" placeholder="••••••••" required
+            <label class="block text-left text-xs font-bold text-slate-700 mb-1.5">PIN de estación</label>
+            <input type="password" name="pin" inputmode="numeric" placeholder="4 dígitos" required
                    class="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl px-4 py-3.5 text-slate-800 text-sm font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#ff6600]/20 focus:border-[#ff6600] transition">
         </div>
 
-        <div class="flex gap-3 pt-2">
-            <a href="<?= url('/login') ?>" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl py-3.5 flex items-center justify-center gap-1.5 text-sm transition">
-                <i data-lucide="arrow-left" class="w-4 h-4"></i> Salir
-            </a>
-            <button type="submit" class="w-1/2 bg-[#ff6600] hover:bg-[#e65c00] text-white font-bold rounded-2xl py-3.5 shadow-lg shadow-orange-500/30 text-sm transition">
-                Entrar
-            </button>
-        </div>
+        <button type="submit" class="w-full bg-[#ff6600] hover:bg-[#e65c00] text-white font-bold rounded-2xl py-3.5 shadow-lg shadow-orange-500/30 text-sm transition">
+            Entrar
+        </button>
+    </form>
+
+    <form method="post" action="<?= url('/logout') ?>" class="mt-3">
+        <?= csrf_field() ?>
+        <button type="submit" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl py-3.5 flex items-center justify-center gap-1.5 text-sm transition">
+            <i data-lucide="log-out" class="w-4 h-4"></i> Cerrar sesión
+        </button>
     </form>
 </div>
 

@@ -41,19 +41,17 @@ if (empty($uri)) {
 // Se aplica antes de cualquier enrutado, tanto para GET como para POST.
 // --------------------------------------------------------------------------
 (function () use ($uri, $method) {
-    // Rutas 100% publicas
+    // Rutas 100% publicas (vitrina + autenticacion): SIEMPRE accesibles,
+    // haya sesion o no. Asi nadie queda atrapado sin poder volver al inicio.
     $publicas = ['/', '/home', '/index.php', '/login', '/register', '/forgot', '/forgot-password', '/logout'];
     if (in_array($uri, $publicas, true) || str_starts_with($uri, '/assets/') || str_starts_with($uri, '/app/Views/auth/')) {
-        // Si ya inicio sesion y visita /login o /register, mandarlo a su panel
-        if (Auth::check() && in_array($uri, ['/login', '/register'], true) && $method === 'GET') {
-            redirect(Auth::homeFor(Auth::role()));
-        }
         return;
     }
 
     // Rol requerido segun el prefijo de la ruta (acepta tambien las variantes
-    // internas /app/Views/<area>/... que usan las redirecciones de los controladores)
+    // internas /app/Views/<area>/....php que usan las redirecciones de los controladores)
     $r = preg_replace('#^/app/Views#', '', $uri);
+    $r = preg_replace('#\.php$#', '', $r);   // /delivery/estacion.php -> /delivery/estacion
     $rol = null;
     if (str_starts_with($r, '/admin'))         $rol = 'admin';
     elseif (str_starts_with($r, '/client'))    $rol = 'cliente';
@@ -75,10 +73,10 @@ if (empty($uri)) {
 
     // Segundo factor: PIN de estacion para Cocina (RF-54) y Domiciliario (RF-64).
     if ($rol === 'cocina' && !Session::get('estacion_cocina_ok') && !$enEstacionCocina) {
-        redirect('/app/Views/kitchen/estacion.php');
+        redirect('/kitchen/estacion');
     }
     if ($rol === 'domiciliario' && !Session::get('estacion_domi_ok') && !$enEstacionDomi) {
-        redirect('/app/Views/delivery/estacion.php');
+        redirect('/delivery/estacion');
     }
 })();
 
