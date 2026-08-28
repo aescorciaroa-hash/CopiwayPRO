@@ -28,6 +28,19 @@ function asset(string $path): string
     return '/assets/' . ltrim($path, '/');
 }
 
+/** Genera la URL absoluta para una ruta. */
+function url(string $path = ''): string
+{
+    return '/' . ltrim($path, '/');
+}
+
+/** Genera el campo oculto HTML con el token CSRF. */
+function csrf_field(): string
+{
+    $token = Session::csrf();
+    return '<input type="hidden" name="_csrf" value="' . e($token) . '">';
+}
+
 /** Redirige a una ruta y termina la ejecucion. */
 function redirect(string $url): void
 {

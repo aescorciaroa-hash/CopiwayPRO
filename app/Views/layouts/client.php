@@ -20,7 +20,7 @@ $cartCount = $carritoModelLayout->cantidad();
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta name="csrf-token" content="<?= e(\App\Core\Session::csrf()) ?>">
+    <meta name="csrf-token" content="<?= e(Session::csrf()) ?>">
     <?php require dirname(__DIR__) . '/partials/head.php'; ?>
 </head>
 <body class="bg-gray-50 dark:bg-ink text-gray-900 dark:text-gray-100 antialiased" x-data="{ sidebar: false }">

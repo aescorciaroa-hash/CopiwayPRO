@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta name="csrf-token" content="<?= e(\App\Core\Session::csrf()) ?>">
+    <meta name="csrf-token" content="<?= e(Session::csrf()) ?>">
     <?php require dirname(__DIR__) . '/partials/head.php'; ?>
 </head>
 <body class="bg-[#f8fafc] text-slate-800 antialiased font-sans">

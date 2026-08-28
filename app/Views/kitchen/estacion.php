@@ -38,7 +38,7 @@
         <p class="text-slate-500 font-semibold text-sm mt-0.5">Panel de Cocina (KDS)</p>
     </div>
 
-    <?php foreach (($_flash ?? \App\Core\Session::pullFlash()) as $f): ?>
+    <?php foreach (($_flash ?? Session::pullFlash()) as $f): ?>
         <div class="mb-6 rounded-2xl bg-red-50 border border-red-200/60 text-red-600 text-sm font-bold p-3.5 text-center">
             <?= e($f['message'] ?: $f['title']) ?>
         </div>

@@ -18,9 +18,11 @@ class Configuracion
         return $res ? ($res->fetch_assoc() ?: []) : [];
     }
 
-    public function value(string $key, $default = null)
+    public static function value(string $key, $default = null)
     {
-        $cfg = $this->get();
+        global $conn;
+        $res = $conn->query("SELECT * FROM CONFIGURACION_SISTEMA LIMIT 1");
+        $cfg = $res ? ($res->fetch_assoc() ?: []) : [];
         return $cfg[$key] ?? $default;
     }
 

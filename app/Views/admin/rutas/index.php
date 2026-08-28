@@ -13,7 +13,7 @@
     <?php foreach ([
         ['En Camino', $contadores['en_camino'] . ' pedido(s)', 'truck'],
         ['Listos en Cocina', $contadores['listo'] . ' pedido(s)', 'chef-hat'],
-        ['Repartidores Activos', count(array_filter($flota, fn($d) => $d['estado_disponibilidad'] !== 'desconectado')), 'users'],
+        ['Repartidores Activos', count(array_filter($flota, fn($d) => ($d['estado_disponibilidad'] ?? 'desconectado') !== 'desconectado')), 'users'],
         ['Tarifa de Envio', money($tarifa), 'dollar-sign'],
     ] as [$label, $valor, $icon]): ?>
         <div class="bg-white dark:bg-card border border-gray-100 dark:border-stone-800 rounded-2xl p-4 shadow-sm">
@@ -48,19 +48,19 @@
     <div class="bg-white dark:bg-card border border-gray-100 dark:border-stone-800 rounded-3xl p-6 shadow-sm">
         <h2 class="font-black text-lg mb-3">Flota de Domiciliarios</h2>
         <div class="space-y-3">
-            <?php foreach ($flota as $d): ?>
+            <?php foreach ($flota as $d): $est = $d['estado_disponibilidad'] ?? 'desconectado'; ?>
                 <div class="rounded-xl border border-gray-100 dark:border-stone-800 p-3">
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-sm"><?= e($d['nombre']) ?></span>
                         <span class="text-[10px] font-black uppercase rounded-full px-2 py-1
-                            <?= $d['estado_disponibilidad'] === 'en_ruta' ? 'bg-blue-100 text-blue-700'
-                                : ($d['estado_disponibilidad'] === 'disponible' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500') ?>">
-                            <?= str_replace('_', ' ', $d['estado_disponibilidad']) ?>
+                            <?= $est === 'en_ruta' ? 'bg-blue-100 text-blue-700'
+                                : ($est === 'disponibles' || $est === 'disponible' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500') ?>">
+                            <?= str_replace('_', ' ', $est) ?>
                         </span>
                     </div>
                     <p class="text-xs text-gray-400 mt-0.5">
-                        <?= e(ucfirst($d['tipo_vehiculo'])) ?><?= $d['placa'] ? ' · ' . e($d['placa']) : '' ?>
-                        <?= $d['pedido_actual'] ? ' · lleva ' . e(\App\Models\Pedido::codigo(\App\Models\Pedido::find($d['pedido_actual']))) : '' ?>
+                        <?= e(ucfirst($d['tipo_vehiculo'] ?? 'vehiculo')) ?><?= !empty($d['placa']) ? ' · ' . e($d['placa']) : '' ?>
+                        <?= !empty($d['pedido_actual']) ? ' · lleva ' . e((new Pedido())->codigo((new Pedido())->find($d['pedido_actual']))) : '' ?>
                     </p>
                 </div>
             <?php endforeach; ?>

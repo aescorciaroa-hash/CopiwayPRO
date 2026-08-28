@@ -175,7 +175,7 @@ $topPct = $segmentos ? round($segmentos[0]['pct'] * 100) : 0;
                 ][$p['estado']] ?? 'bg-gray-100 text-gray-700'; ?>
                 <div class="flex items-center justify-between py-3">
                     <div class="flex items-center gap-3 min-w-0">
-                        <span class="font-mono font-bold text-sm text-gray-400"><?= \App\Models\Pedido::codigo($p) ?></span>
+                        <span class="font-mono font-bold text-sm text-gray-400"><?= $pedidoModel->codigo($p) ?></span>
                         <span class="text-sm font-bold truncate"><?= e($p['cliente_nombre']) ?></span>
                     </div>
                     <div class="flex items-center gap-3 shrink-0">
@@ -200,7 +200,7 @@ $topPct = $segmentos ? round($segmentos[0]['pct'] * 100) : 0;
             <div class="flex justify-between"><span class="text-gray-500">En cocina</span><span class="font-bold"><?= $contadores['en_preparacion'] ?> pedidos</span></div>
             <div class="flex justify-between"><span class="text-gray-500">Listos</span><span class="font-bold"><?= $contadores['listo'] ?> pedidos</span></div>
             <div class="flex justify-between"><span class="text-gray-500">En camino</span><span class="font-bold"><?= $contadores['en_camino'] ?> pedidos</span></div>
-            <div class="flex justify-between"><span class="text-gray-500">Tarifa plana</span><span class="font-bold text-brand-600"><?= money(\App\Models\Configuracion::value('tarifa_plana_domicilio')) ?></span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Tarifa plana</span><span class="font-bold text-brand-600"><?= money(Configuracion::value('tarifa_plana_domicilio')) ?></span></div>
             <div class="flex justify-between">
                 <span class="text-gray-500">Estado del local</span>
                 <span class="font-bold <?= $estadoCocina['abierta'] ? 'text-emerald-500' : 'text-red-500' ?>">

@@ -232,5 +232,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<?php $segundos = 15; require \App\Core\App::config("paths")["views"] . "/partials/autorefresh.php"; ?>
+<?php $segundos = 15; require dirname(__DIR__) . "/partials/autorefresh.php"; ?>
 

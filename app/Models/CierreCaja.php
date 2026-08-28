@@ -182,5 +182,16 @@ class CierreCaja
             throw $ex;
         }
     }
+
+    public function obtener(string $fecha): array
+    {
+        return $this->calcular($fecha);
+    }
+
+    public function recientes(int $limite = 10): array
+    {
+        $res = $this->conn->query("SELECT * FROM REPORTE_CAJA ORDER BY fecha DESC LIMIT {$limite}");
+        return $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+    }
 }
 

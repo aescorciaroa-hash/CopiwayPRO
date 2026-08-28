@@ -1,5 +1,9 @@
 <?php
 /** @var array $productos @var array $categorias @var array $ingredientes */
+$buscar = $buscar ?? ($_GET['q'] ?? '');
+$filtroCat = $filtroCat ?? ($_GET['categoria'] ?? null);
+$productos = $productos ?? [];
+$categorias = $categorias ?? [];
 $totalProd = count($productos);
 ?>
 <div x-data="menuPage()" x-init="init()">
@@ -39,7 +43,7 @@ $totalProd = count($productos);
     <?php foreach ($categorias as $c): ?>
         <a href="<?= url('/admin/menu?categoria=' . urlencode($c['id_categoria'])) ?>"
            class="px-3.5 py-1.5 rounded-full text-sm font-bold transition <?= $filtroCat === $c['id_categoria'] ? 'bg-brand-500 text-white' : 'bg-gray-100 dark:bg-stone-800 hover:bg-gray-200 dark:hover:bg-stone-700' ?>">
-            <?= e($c['nombre']) ?> <span class="opacity-60"><?= $c['items'] ?></span>
+            <?= e($c['nombre']) ?> <span class="opacity-60"><?= $c['items'] ?? 0 ?></span>
         </a>
     <?php endforeach; ?>
     <button type="button" @click="openCategorias = true"
@@ -69,7 +73,7 @@ $totalProd = count($productos);
                 <div class="flex items-center justify-between mt-4">
                     <div>
                         <span class="font-black text-brand-600 text-lg"><?= money($p['precio']) ?></span>
-                        <span class="block text-[11px] text-gray-400"><?= $p['insumos'] ?> insumos</span>
+                        <span class="block text-[11px] text-gray-400"><?= $p['insumos'] ?? 0 ?> insumos</span>
                     </div>
                     <div class="flex gap-1.5">
                         <button @click="editar('<?= e($p['id_producto']) ?>')"

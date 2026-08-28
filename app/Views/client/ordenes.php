@@ -76,4 +76,4 @@ $labels = ['Recibido', 'En preparacion', 'Listo', 'En camino'];
 <?php endif; ?>
 
 
-<?php $segundos = 15; require \App\Core\App::config("paths")["views"] . "/partials/autorefresh.php"; ?>
+<?php $segundos = 15; require dirname(__DIR__) . "/partials/autorefresh.php"; ?>

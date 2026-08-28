@@ -17,14 +17,14 @@ class Empleado
     {
         $resA = $this->conn->query(
             "SELECT id_ayudante AS id, 'cocina' AS rol, nombre, correo, telefono, activo, turno,
-                    NULL AS placa, NULL AS tipo_vehiculo, NULL AS base_efectivo_asignada
+                    NULL AS placa, NULL AS tipo_vehiculo, NULL AS base_efectivo_asignada, 'desconectado' AS estado_disponibilidad, NULL AS pedido_actual
              FROM AYUDANTE_COCINA"
         );
         $ayudantes = $resA->fetch_all(MYSQLI_ASSOC);
 
         $resD = $this->conn->query(
             "SELECT id_domiciliario AS id, 'domiciliario' AS rol, nombre, correo, telefono, activo, NULL AS turno,
-                    placa, tipo_vehiculo, base_efectivo_asignada
+                    placa, tipo_vehiculo, base_efectivo_asignada, COALESCE(estado_disponibilidad, 'desconectado') AS estado_disponibilidad
              FROM DOMICILIARIO"
         );
         $domis = $resD->fetch_all(MYSQLI_ASSOC);

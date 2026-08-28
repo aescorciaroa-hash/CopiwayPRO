@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta name="csrf-token" content="<?= e(\App\Core\Session::csrf()) ?>">
+    <meta name="csrf-token" content="<?= e(Session::csrf()) ?>">
     <?php require dirname(__DIR__) . '/partials/head.php'; ?>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-100 dark:from-ink dark:via-ink dark:to-black

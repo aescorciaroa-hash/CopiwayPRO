@@ -145,7 +145,8 @@ function comandasPage() {
         quitarLinea(i) { this.lineas.splice(i, 1); },
         precio(id) { return (this.productos.find(p => p.id === id) || {}).precio || 0; },
         get subtotal() { return this.lineas.reduce((s, l) => s + this.precio(l.id) * (parseInt(l.cant) || 0), 0); },
-        get envio() { return <?= (float) \App\Models\Configuracion::value('tarifa_plana_domicilio', 0) ?>; },
+        get envio() { return <?= (float) Configuracion::value('tarifa_plana_domicilio', 0) ?>; },
+        get total() { return this.subtotal + this.envio; },
         money(v) { return '$ ' + Number(v || 0).toLocaleString('es-CO', { maximumFractionDigits: 0 }); },
         async verDetalle(id) {
             const res = await fetch('<?= url('/admin/comandas') ?>/' + id);
@@ -158,5 +159,4 @@ function comandasPage() {
 }
 </script>
 
-
-<?php $segundos = 15; require \App\Core\App::config("paths")["views"] . "/partials/autorefresh.php"; ?>
+<?php $segundos = 15; require dirname(__DIR__, 2) . "/partials/autorefresh.php"; ?>
