@@ -13,28 +13,29 @@ class Periodo
     /** Devuelve [desde, hasta] en formato 'Y-m-d H:i:s'. */
     public static function rango(string $clave): array
     {
+        // DateTimeImmutable: cada llamada a modify() devuelve una fecha nueva
+        // y no toca la original, asi podemos calcular inicio y fin por separado.
         $hoy = new \DateTimeImmutable('today');
 
-        [$desde, $hasta] = match ($clave) {
-            'semana' => [
-                $hoy->modify('monday this week'),
-                $hoy->modify('sunday this week'),
-            ],
-            'semana_pasada' => [
-                $hoy->modify('monday last week'),
-                $hoy->modify('sunday last week'),
-            ],
-            'mes' => [
-                $hoy->modify('first day of this month'),
-                $hoy->modify('last day of this month'),
-            ],
-            'mes_pasado' => [
-                $hoy->modify('first day of last month'),
-                $hoy->modify('last day of last month'),
-            ],
-            default => [$hoy, $hoy], // hoy
-        };
+        // Valor por defecto: el periodo "hoy" (desde hoy hasta hoy).
+        $desde = $hoy;
+        $hasta = $hoy;
 
+        if ($clave === 'semana') {
+            $desde = $hoy->modify('monday this week');
+            $hasta = $hoy->modify('sunday this week');
+        } elseif ($clave === 'semana_pasada') {
+            $desde = $hoy->modify('monday last week');
+            $hasta = $hoy->modify('sunday last week');
+        } elseif ($clave === 'mes') {
+            $desde = $hoy->modify('first day of this month');
+            $hasta = $hoy->modify('last day of this month');
+        } elseif ($clave === 'mes_pasado') {
+            $desde = $hoy->modify('first day of last month');
+            $hasta = $hoy->modify('last day of last month');
+        }
+
+        // Se devuelve el dia completo: desde las 00:00:00 hasta las 23:59:59.
         return [
             $desde->format('Y-m-d') . ' 00:00:00',
             $hasta->format('Y-m-d') . ' 23:59:59',

@@ -4,64 +4,78 @@
 <div x-data="catalogo()">
 
 <?php if ($cumple): ?>
-    <div class="mb-6 rounded-3xl bg-brand-500 text-white p-5 flex items-center gap-4">
-        <i data-lucide="gift" class="w-8 h-8"></i>
+    <div class="mb-6 rounded-[32px] bg-brand-500/10 border border-brand-500/20 p-5 flex items-center gap-4">
+        <span class="w-12 h-12 rounded-2xl bg-brand-500/15 text-brand-600 dark:text-brand-500 flex items-center justify-center shrink-0">
+            <i data-lucide="gift" class="w-6 h-6"></i>
+        </span>
         <div>
-            <p class="font-black">Feliz Cumpleanos, <?= e($cliente['nombre']) ?>!</p>
-            <p class="text-sm text-white/90">Tienes un 15% de descuento automatico en tu carrito, valido solo por hoy.</p>
+            <p class="font-black tracking-tight text-brand-700 dark:text-brand-400">Feliz Cumpleanos, <?= e($cliente['nombre']) ?>!</p>
+            <p class="text-sm font-medium text-brand-600/80 dark:text-brand-400/80">Tienes un 15% de descuento automatico en tu carrito, valido solo por hoy.</p>
         </div>
     </div>
 <?php endif; ?>
 
 <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-    <h1 class="text-3xl font-black">Catalogo de Productos</h1>
+    <h1 class="text-3xl font-black tracking-tight text-gray-900 dark:text-white">Catalogo de Productos</h1>
     <?php if ($ultimoPedido): ?>
         <form method="post" action="<?= url('/client/historial/' . $ultimoPedido . '/recomprar') ?>">
             <?= csrf_field() ?>
-            <button class="inline-flex items-center gap-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 text-sm font-bold">
+            <button class="inline-flex items-center gap-2 rounded-2xl bg-brand-500 hover:bg-brand-600 text-white px-5 py-3 text-sm font-medium
+                           shadow-lg shadow-brand-500/25 transition-all duration-300 hover:scale-105">
                 <i data-lucide="repeat" class="w-4 h-4"></i> Pedir lo mismo de la ultima vez
             </button>
         </form>
     <?php endif; ?>
 </div>
 
-<div class="flex flex-wrap gap-2 mb-6">
-    <button @click="cat = 'todas'" :class="cat === 'todas' ? 'bg-brand-500 text-white border-brand-500' : 'border-gray-200 dark:border-stone-700'"
-            class="px-4 py-2 rounded-full border text-sm font-bold">Todas</button>
+<div class="flex flex-wrap gap-2 mb-8">
+    <button @click="cat = 'todas'"
+            :class="cat === 'todas' ? 'bg-brand-500 text-white border-brand-500 shadow-md shadow-brand-500/25' : 'bg-white dark:bg-stone-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-stone-700 hover:border-brand-500 hover:text-brand-600'"
+            class="px-5 py-2.5 rounded-2xl border text-sm font-medium transition-all duration-300 hover:scale-105">Todas</button>
     <?php foreach ($categorias as $c): ?>
         <button @click="cat = '<?= e($c['id_categoria']) ?>'"
-                :class="cat === '<?= e($c['id_categoria']) ?>' ? 'bg-brand-500 text-white border-brand-500' : 'border-gray-200 dark:border-stone-700'"
-                class="px-4 py-2 rounded-full border text-sm font-bold"><?= e($c['nombre']) ?></button>
+                :class="cat === '<?= e($c['id_categoria']) ?>' ? 'bg-brand-500 text-white border-brand-500 shadow-md shadow-brand-500/25' : 'bg-white dark:bg-stone-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-stone-700 hover:border-brand-500 hover:text-brand-600'"
+                class="px-5 py-2.5 rounded-2xl border text-sm font-medium transition-all duration-300 hover:scale-105"><?= e($c['nombre']) ?></button>
     <?php endforeach; ?>
 </div>
 
 <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
     <?php foreach ($productos as $p): ?>
         <div x-show="cat === 'todas' || cat === '<?= e($p['id_categoria']) ?>'" x-transition
-             class="bg-white dark:bg-card border border-gray-100 dark:border-stone-800 rounded-3xl overflow-hidden shadow-sm flex flex-col relative
-                    <?= $p['agotado'] ? 'opacity-70' : '' ?>">
+             class="group bg-white dark:bg-stone-900 border border-gray-100 dark:border-stone-800 rounded-[32px] overflow-hidden shadow-sm
+                    hover:shadow-xl transition-all duration-300 flex flex-col relative <?= $p['agotado'] ? 'opacity-70' : '' ?>">
             <?php if ($p['agotado']): ?><div class="badge-agotado"><span>AGOTADO</span></div><?php endif; ?>
-            <div class="h-44 bg-gray-100 dark:bg-stone-800 bg-cover bg-center"
-                 style="background-image:url('<?= e($p['imagen'] ?: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=500&q=60') ?>')"></div>
-            <div class="p-4 flex-1 flex flex-col">
+            <div class="h-44 bg-gray-100 dark:bg-stone-800 overflow-hidden">
+                <div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+                     style="background-image:url('<?= e($p['imagen'] ?: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=500&q=60') ?>')"></div>
+            </div>
+            <div class="p-5 flex-1 flex flex-col">
                 <?php if ($p['etiqueta_destacada'] !== 'ninguna'): ?>
-                    <span class="self-start text-[10px] font-black tracking-wide bg-brand-500 text-white rounded-full px-2 py-1 mb-2">
+                    <span class="self-start text-[10px] font-black tracking-wide bg-brand-500 text-white rounded-full px-2.5 py-1 mb-2">
                         <?= strtoupper(str_replace('_', ' ', $p['etiqueta_destacada'])) ?>
                     </span>
                 <?php endif; ?>
-                <h3 class="font-bold"><?= e($p['nombre']) ?></h3>
-                <p class="text-xs text-brand-500/80 dark:text-brand-400/80 mt-1 line-clamp-2 flex-1"><?= e($p['descripcion']) ?></p>
-                <div class="flex items-center justify-between mt-3">
-                    <span class="font-black text-brand-600"><?= money($p['precio']) ?></span>
+                <h3 class="font-black tracking-tight text-gray-900 dark:text-white"><?= e($p['nombre']) ?></h3>
+                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 flex-1"><?= e($p['descripcion']) ?></p>
+                <div class="flex items-center justify-between mt-4">
+                    <span class="font-black tracking-tight text-lg text-brand-600 dark:text-brand-500"><?= money($p['precio']) ?></span>
                     <button @click="abrir('<?= e($p['id_producto']) ?>')" <?= $p['agotado'] ? 'disabled' : '' ?>
-                            class="w-9 h-9 rounded-full bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white flex items-center justify-center">
-                        <i data-lucide="plus" class="w-4 h-4"></i>
+                            class="inline-flex items-center gap-1.5 rounded-2xl bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white
+                                   text-sm font-medium px-4 py-2.5 transition-all duration-300 hover:scale-105">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Anadir
                     </button>
                 </div>
             </div>
         </div>
     <?php endforeach; ?>
 </div>
+
+<!-- Carrito flotante -->
+<a href="<?= url('/client/carrito') ?>"
+   class="fixed bottom-24 md:bottom-8 right-6 z-40 inline-flex items-center gap-2.5 rounded-2xl bg-brand-500 hover:bg-brand-600 text-white
+          font-medium px-5 py-3.5 shadow-xl shadow-brand-500/30 transition-all duration-300 hover:scale-105">
+    <i data-lucide="shopping-cart" class="w-5 h-5"></i> Ver carrito
+</a>
 
 <?php require __DIR__ . '/_modal_personalizar.php'; ?>
 

@@ -77,13 +77,14 @@
                 <tr><th class="py-2">Pedido</th><th>Cliente</th><th>Direccion</th><th>Domiciliario</th><th>Estado</th></tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-stone-800">
-                <?php foreach ($despachos as $p): [$lbl, $cls] = estado_badge($p['estado']); ?>
+                <?php foreach ($despachos as $p): ?>
+                    <?php $badge = estado_badge($p['estado']); ?>
                     <tr>
                         <td class="py-2.5 font-mono font-bold"><?= $p['codigo'] ?></td>
                         <td><?= e($p['cliente_nombre']) ?></td>
                         <td class="text-gray-500"><?= e($p['direccion_entrega']) ?></td>
                         <td class="text-gray-500"><?= e($p['domiciliario_nombre'] ?: 'Por asignar') ?></td>
-                        <td><span class="text-[10px] font-black uppercase rounded-full px-2 py-1 <?= $cls ?>"><?= $lbl ?></span></td>
+                        <td><span class="text-[10px] font-black uppercase rounded-full px-2 py-1 <?= $badge['clases'] ?>"><?= $badge['texto'] ?></span></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

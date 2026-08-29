@@ -2,72 +2,92 @@
 /** @var array $tablero @var array $resumen @var array $criticos */
 $cols = [
     'pendiente'      => ['Pendientes', 'stone'],
-    'en_preparacion' => ['En Preparación', 'brand'],
+    'en_preparacion' => ['Preparando', 'brand'],
     'listo'          => ['Listos', 'emerald'],
 ];
 ?>
-<div x-data="{ sonido: true }">
-    <!-- Header Superior KDS -->
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <div>
-            <span class="inline-flex items-center gap-2 bg-slate-100/90 dark:bg-stone-800 dark:border-stone-700 border border-slate-200/60 rounded-full px-4 py-2 text-xs font-extrabold text-slate-700 shadow-sm">
-                <i data-lucide="rotate-cw" class="w-4 h-4 text-amber-500 animate-spin-slow"></i>
-                TIEMPO PROM: <span class="text-slate-900 font-black">8.5 MIN</span>
+<style>
+@keyframes kds-sla {
+    0%, 100% { border-color: #ef4444; box-shadow: 0 0 0 0 rgba(239,68,68,.45); }
+    50%      { border-color: #fca5a5; box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+}
+.kds-sla { animation: kds-sla 1s ease-in-out infinite; }
+</style>
+
+<!-- Tablero KDS · fondo oscuro para reducir fatiga visual -->
+<div x-data="{ sonido: true }" class="bg-stone-900 text-stone-100 rounded-[32px] p-4 sm:p-6 min-h-[calc(100dvh-7rem)]">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div class="flex items-center gap-3">
+            <span class="w-12 h-12 rounded-2xl bg-brand-500 flex items-center justify-center shrink-0">
+                <i data-lucide="chef-hat" class="w-6 h-6 text-white"></i>
             </span>
+            <div>
+                <h1 class="text-2xl font-black tracking-tight text-white leading-none">Tablero de Cocina</h1>
+                <p class="text-sm font-medium text-stone-400 mt-1 flex items-center gap-1.5">
+                    <i data-lucide="rotate-cw" class="w-4 h-4 text-brand-500 animate-spin-slow"></i>
+                    Tiempo promedio: <span class="font-black text-white">8.5 min</span>
+                </p>
+            </div>
         </div>
 
         <div class="flex items-center gap-3">
             <button @click="sonido = !sonido; window.toast('config','Sonido de Alertas', sonido ? 'Alertas sonoras activadas.' : 'Alertas sonoras silenciadas.')"
-                    class="inline-flex items-center gap-2 bg-amber-50/80 border border-amber-200/70 rounded-full px-4 py-2 text-xs font-bold transition"
-                    :class="sonido ? 'text-amber-700' : 'text-slate-400 bg-slate-100 border-slate-200'">
-                <i :data-lucide="sonido ? 'volume-2' : 'volume-x'" class="w-4 h-4 text-amber-500"></i>
+                    class="inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold border transition-colors"
+                    :class="sonido ? 'bg-brand-500/15 border-brand-500/30 text-brand-400' : 'bg-stone-800 border-stone-700 text-stone-400'">
+                <i :data-lucide="sonido ? 'volume-2' : 'volume-x'" class="w-5 h-5"></i>
                 <span x-text="sonido ? 'Sonido Activo' : 'Silenciado'"></span>
             </button>
-
-            <span class="bg-[#0f172a] text-white px-4 py-2 rounded-2xl font-mono font-black text-sm tracking-wider shadow-sm"
+            <span class="bg-white text-stone-900 px-5 py-3 rounded-2xl font-mono font-black text-lg tracking-widest shadow-lg"
                   x-data="{ t: '' }" x-init="setInterval(() => t = new Date().toLocaleTimeString('es-CO'), 1000)" x-text="t || '09:41:49'">
                 09:41:49
             </span>
         </div>
     </div>
 
-    <!-- Grid de 3 Columnas principales KDS -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Kanban: 3 columnas -->
+    <div class="flex gap-5 overflow-x-auto pb-2 snap-x snap-mandatory lg:grid lg:grid-cols-3 lg:overflow-visible">
 
-        <!-- COLUMNA 1: PENDIENTES -->
-        <div>
-            <div class="flex items-center justify-between mb-4 px-1">
-                <div class="flex items-center gap-2.5 font-extrabold text-slate-800 text-base">
-                    <span>Pendientes</span>
-                    <span class="w-6 h-6 rounded-full bg-[#ff6600] text-white text-xs font-black flex items-center justify-center shadow-sm">
-                        <?= count($tablero['pendiente']) ?>
-                    </span>
-                </div>
-                <i data-lucide="clock" class="w-5 h-5 text-slate-400"></i>
+        <!-- COLUMNA 1 · PENDIENTES -->
+        <div class="w-[85vw] sm:w-[400px] lg:w-auto shrink-0 snap-center">
+            <div class="flex items-center gap-3 mb-4 px-1">
+                <h2 class="text-xl font-black tracking-tight text-white">Pendientes</h2>
+                <span class="min-w-[32px] h-8 px-2 rounded-full bg-brand-500 text-white text-sm font-black flex items-center justify-center">
+                    <?= count($tablero['pendiente']) ?>
+                </span>
+                <i data-lucide="clock" class="w-5 h-5 text-stone-500 ml-auto"></i>
             </div>
 
             <div class="space-y-4">
                 <?php foreach ($tablero['pendiente'] as $p): ?>
-                    <div class="bg-white dark:bg-[#1a1a1a] rounded-3xl p-5 shadow-sm border border-slate-100/90 dark:border-stone-800 space-y-4 hover:shadow-md transition">
+                    <div class="bg-stone-800 rounded-[32px] p-5 border border-stone-700/60 space-y-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <span class="font-mono font-black text-xl text-slate-900 dark:text-white block"><?= e($p['codigo']) ?></span>
-                                <span class="text-xs font-medium text-slate-400 flex items-center gap-1 mt-0.5">
-                                    <i data-lucide="clock" class="w-3.5 h-3.5"></i> Hace <?= (int) $p['minutos'] ?> min
+                                <span class="font-mono font-black text-2xl text-white block"><?= e($p['codigo']) ?></span>
+                                <span class="text-sm font-medium text-stone-400 flex items-center gap-1.5 mt-0.5">
+                                    <i data-lucide="clock" class="w-4 h-4"></i> Hace <?= (int) $p['minutos'] ?> min
                                 </span>
                             </div>
-                            <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold">||</span>
                         </div>
 
-                        <div class="space-y-2">
+                        <div class="space-y-3">
                             <?php foreach ($p['lineas'] as $l): ?>
-                                <div class="bg-slate-50/70 dark:bg-stone-800/60 rounded-2xl p-3.5 border border-slate-100 dark:border-stone-800 flex items-start gap-3">
-                                    <span class="font-extrabold text-[#ff6600] text-sm shrink-0"><?= (int) $l['cantidad'] ?>x</span>
-                                    <div>
-                                        <p class="font-bold text-slate-800 dark:text-slate-100 text-sm leading-snug"><?= e($l['nombre']) ?></p>
-                                        <?php if ($l['personalizaciones']): ?>
-                                            <p class="text-xs text-slate-500 mt-1"><?= mods_html($l['personalizaciones']) ?></p>
-                                        <?php endif; ?>
+                                <div class="bg-stone-900/70 rounded-2xl p-4 border border-stone-700/50 space-y-2.5">
+                                    <?php if ($l['personalizaciones']): ?>
+                                        <div class="flex flex-wrap gap-2">
+                                            <?php foreach ($l['personalizaciones'] as $mod): ?>
+                                                <?php $sin = ($mod['accion_modificacion'] ?? '') === 'quitar'; ?>
+                                                <span class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[13px] font-black uppercase tracking-wide
+                                                             <?= $sin ? 'bg-red-500/15 text-red-400' : 'bg-emerald-500/15 text-emerald-400' ?>">
+                                                    <?= $sin ? 'SIN' : 'EXTRA' ?> <?= e($mod['nombre']) ?>
+                                                </span>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <div class="flex items-start gap-3">
+                                        <span class="font-black text-brand-500 text-xl shrink-0"><?= (int) $l['cantidad'] ?>x</span>
+                                        <p class="font-bold text-white text-lg leading-snug"><?= e($l['nombre']) ?></p>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -75,7 +95,7 @@ $cols = [
 
                         <form method="post" action="<?= url('/kitchen/pedido/' . $p['id_pedido'] . '/preparar') ?>">
                             <?= csrf_field() ?>
-                            <button type="submit" class="w-full bg-[#ff6600] hover:bg-[#e65c00] text-white font-bold rounded-2xl py-3.5 shadow-lg shadow-orange-500/25 text-sm transition">
+                            <button type="submit" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-black text-xl rounded-2xl py-5 shadow-lg shadow-brand-500/25 transition-all duration-300 active:scale-[0.98]">
                                 Preparar
                             </button>
                         </form>
@@ -83,61 +103,72 @@ $cols = [
                 <?php endforeach; ?>
 
                 <?php if (empty($tablero['pendiente'])): ?>
-                    <div class="bg-white dark:bg-[#1a1a1a] rounded-3xl p-10 text-center border border-slate-100/80 dark:border-stone-800 flex flex-col items-center justify-center text-slate-400 min-h-[280px]">
-                        <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center mb-3">
-                            <i data-lucide="dollar-sign" class="w-6 h-6"></i>
-                        </div>
-                        <p class="text-sm font-semibold text-slate-500">Sin pedidos pendientes</p>
+                    <div class="bg-stone-800/60 rounded-[32px] p-10 text-center border border-stone-700/50 flex flex-col items-center justify-center text-stone-500 min-h-[240px]">
+                        <i data-lucide="inbox" class="w-12 h-12 mb-3 stroke-[1.5]"></i>
+                        <p class="text-base font-bold">Sin pedidos pendientes</p>
                     </div>
                 <?php endif; ?>
             </div>
         </div>
 
-        <!-- COLUMNA 2: EN PREPARACIÓN -->
-        <div>
-            <div class="bg-[#ff6600] text-white rounded-2xl px-5 py-3.5 font-bold text-sm flex items-center justify-between shadow-md shadow-orange-500/20 mb-4">
-                <span>En Preparación</span>
-                <span class="w-6 h-6 rounded-full bg-white/20 text-white text-xs font-black flex items-center justify-center">
+        <!-- COLUMNA 2 · PREPARANDO -->
+        <div class="w-[85vw] sm:w-[400px] lg:w-auto shrink-0 snap-center">
+            <div class="bg-brand-500 text-white rounded-2xl px-5 py-4 font-black tracking-tight text-xl flex items-center justify-between shadow-lg shadow-brand-500/20 mb-4">
+                <span>Preparando</span>
+                <span class="min-w-[32px] h-8 px-2 rounded-full bg-white/20 text-white text-sm font-black flex items-center justify-center">
                     <?= count($tablero['en_preparacion']) ?>
                 </span>
             </div>
 
             <div class="space-y-4">
                 <?php foreach ($tablero['en_preparacion'] as $p): $tarde = (int) $p['minutos'] >= 15; ?>
-                    <div class="bg-white dark:bg-[#1a1a1a] rounded-3xl p-5 shadow-md space-y-4 relative overflow-hidden <?= $tarde ? 'border-2 border-red-500 animate-pulse' : 'border border-slate-100/90' ?>">
+                    <div class="bg-stone-800 rounded-[32px] p-5 space-y-4
+                                <?= $tarde ? 'border-2 kds-sla' : 'border border-stone-700/60' ?>">
                         <div class="flex items-center justify-between">
                             <div>
-                                <span class="font-mono font-black text-xl <?= $tarde ? 'text-red-600' : 'text-slate-900' ?> block"><?= e($p['codigo']) ?></span>
-                                <span class="text-xs font-medium <?= $tarde ? 'text-red-500' : 'text-slate-400' ?> flex items-center gap-1 mt-0.5">
-                                    <i data-lucide="clock" class="w-3.5 h-3.5"></i> Hace <?= (int) $p['minutos'] ?> min<?= $tarde ? ' · SLA superado' : '' ?>
+                                <span class="font-mono font-black text-2xl <?= $tarde ? 'text-red-400' : 'text-white' ?> block"><?= e($p['codigo']) ?></span>
+                                <span class="text-sm font-bold <?= $tarde ? 'text-red-400' : 'text-stone-400' ?> flex items-center gap-1.5 mt-0.5">
+                                    <i data-lucide="clock" class="w-4 h-4"></i> Hace <?= (int) $p['minutos'] ?> min<?= $tarde ? ' · SLA SUPERADO' : '' ?>
                                 </span>
                             </div>
-                            <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold">||</span>
+                            <?php if ($tarde): ?>
+                                <span class="inline-flex items-center gap-1 rounded-full bg-red-500 text-white text-xs font-black px-3 py-1.5 uppercase">
+                                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Demora
+                                </span>
+                            <?php endif; ?>
                         </div>
 
-                        <div class="space-y-2">
+                        <div class="space-y-3">
                             <?php foreach ($p['lineas'] as $l): ?>
-                                <div class="bg-slate-50/70 dark:bg-stone-800/60 rounded-2xl p-3.5 border border-slate-100 dark:border-stone-800 flex items-start gap-3">
-                                    <span class="font-extrabold text-[#ff6600] text-sm shrink-0"><?= (int) $l['cantidad'] ?>x</span>
-                                    <div>
-                                        <p class="font-bold text-slate-800 dark:text-slate-100 text-sm leading-snug"><?= e($l['nombre']) ?></p>
-                                        <?php if ($l['personalizaciones']): ?>
-                                            <p class="text-xs text-slate-500 mt-1"><?= mods_html($l['personalizaciones']) ?></p>
-                                        <?php endif; ?>
+                                <div class="bg-stone-900/70 rounded-2xl p-4 border border-stone-700/50 space-y-2.5">
+                                    <?php if ($l['personalizaciones']): ?>
+                                        <div class="flex flex-wrap gap-2">
+                                            <?php foreach ($l['personalizaciones'] as $mod): ?>
+                                                <?php $sin = ($mod['accion_modificacion'] ?? '') === 'quitar'; ?>
+                                                <span class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[13px] font-black uppercase tracking-wide
+                                                             <?= $sin ? 'bg-red-500/15 text-red-400' : 'bg-emerald-500/15 text-emerald-400' ?>">
+                                                    <?= $sin ? 'SIN' : 'EXTRA' ?> <?= e($mod['nombre']) ?>
+                                                </span>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <div class="flex items-start gap-3">
+                                        <span class="font-black text-brand-500 text-xl shrink-0"><?= (int) $l['cantidad'] ?>x</span>
+                                        <p class="font-bold text-white text-lg leading-snug"><?= e($l['nombre']) ?></p>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
                         </div>
 
-                        <div class="flex gap-2.5 pt-1">
+                        <div class="flex gap-3">
                             <a href="<?= url('/kitchen/pedido/' . $p['id_pedido'] . '/tirilla') ?>" target="_blank"
-                               class="w-12 h-12 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl flex items-center justify-center transition shrink-0">
-                                <i data-lucide="printer" class="w-5 h-5"></i>
+                               class="px-5 py-5 rounded-2xl bg-stone-700 hover:bg-stone-600 text-white font-bold text-base flex items-center justify-center gap-2 transition shrink-0">
+                                <i data-lucide="printer" class="w-5 h-5"></i> Sticker
                             </a>
                             <form method="post" action="<?= url('/kitchen/pedido/' . $p['id_pedido'] . '/listo') ?>" class="flex-1">
                                 <?= csrf_field() ?>
-                                <button type="submit" class="w-full bg-[#10b981] hover:bg-[#059669] text-white font-bold rounded-2xl py-3.5 shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 text-sm transition">
-                                    <i data-lucide="check-circle-2" class="w-5 h-5"></i> Marcar Listo
+                                <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xl rounded-2xl py-5 shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 transition-all duration-300 active:scale-[0.98]">
+                                    <i data-lucide="check-circle-2" class="w-6 h-6"></i> Marcar Listo
                                 </button>
                             </form>
                         </div>
@@ -145,66 +176,60 @@ $cols = [
                 <?php endforeach; ?>
 
                 <?php if (empty($tablero['en_preparacion'])): ?>
-                    <div class="bg-white dark:bg-[#1a1a1a] rounded-3xl p-12 text-center border border-slate-100/80 dark:border-stone-800 flex flex-col items-center justify-center text-slate-300 min-h-[300px]">
-                        <i data-lucide="utensils-crossed" class="w-12 h-12 mb-3 text-slate-300 stroke-[1.5]"></i>
-                        <p class="text-sm font-semibold text-slate-400">Sin pedidos en curso</p>
+                    <div class="bg-stone-800/60 rounded-[32px] p-12 text-center border border-stone-700/50 flex flex-col items-center justify-center text-stone-500 min-h-[300px]">
+                        <i data-lucide="utensils-crossed" class="w-12 h-12 mb-3 stroke-[1.5]"></i>
+                        <p class="text-base font-bold">Sin pedidos en curso</p>
                     </div>
                 <?php endif; ?>
             </div>
         </div>
 
-        <!-- COLUMNA 3: LISTOS -->
-        <div>
-            <div class="flex items-center justify-between mb-4 px-1">
-                <div class="flex items-center gap-2.5 font-extrabold text-slate-800 text-base">
-                    <span>Listos</span>
-                    <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-800 text-xs font-black flex items-center justify-center">
-                        <?= count($tablero['listo']) ?>
-                    </span>
-                </div>
-                <i data-lucide="check-circle-2" class="w-5 h-5 text-amber-500"></i>
+        <!-- COLUMNA 3 · LISTOS -->
+        <div class="w-[85vw] sm:w-[400px] lg:w-auto shrink-0 snap-center">
+            <div class="flex items-center gap-3 mb-4 px-1">
+                <h2 class="text-xl font-black tracking-tight text-white">Listos</h2>
+                <span class="min-w-[32px] h-8 px-2 rounded-full bg-emerald-500/20 text-emerald-400 text-sm font-black flex items-center justify-center">
+                    <?= count($tablero['listo']) ?>
+                </span>
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500 ml-auto"></i>
             </div>
 
             <div class="space-y-4">
                 <?php foreach ($tablero['listo'] as $p): ?>
-                    <div class="bg-white dark:bg-[#1a1a1a] rounded-3xl p-5 shadow-sm border border-slate-100/90 dark:border-stone-800 space-y-4 hover:shadow-md transition">
-                        <div class="flex items-center justify-between">
+                    <div class="bg-stone-800 rounded-[32px] p-5 border border-stone-700/60 space-y-4">
+                        <div class="flex items-center justify-between gap-2">
                             <div>
-                                <span class="font-mono font-black text-xl text-slate-900 dark:text-white block"><?= e($p['codigo']) ?></span>
-                                <span class="text-xs font-medium text-slate-400 flex items-center gap-1 mt-0.5">
-                                    <i data-lucide="clock" class="w-3.5 h-3.5"></i> Hace <?= (int) $p['minutos'] ?> min
+                                <span class="font-mono font-black text-2xl text-white block"><?= e($p['codigo']) ?></span>
+                                <span class="text-sm font-medium text-stone-400 flex items-center gap-1.5 mt-0.5">
+                                    <i data-lucide="clock" class="w-4 h-4"></i> Hace <?= (int) $p['minutos'] ?> min
                                 </span>
                             </div>
                             <?php if (!empty($p['domiciliario_nombre'])): ?>
-                                <span class="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-bold">
+                                <span class="bg-stone-700 text-white px-3 py-1.5 rounded-full text-xs font-bold shrink-0">
                                     <?= e($p['domiciliario_nombre']) ?>
                                 </span>
-                            <?php else: ?>
-                                <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold">||</span>
                             <?php endif; ?>
                         </div>
 
-                        <div class="space-y-2">
+                        <div class="space-y-3">
                             <?php foreach ($p['lineas'] as $l): ?>
-                                <div class="bg-slate-50/70 dark:bg-stone-800/60 rounded-2xl p-3.5 border border-slate-100 dark:border-stone-800 flex items-start gap-3">
-                                    <span class="font-extrabold text-[#ff6600] text-sm shrink-0"><?= (int) $l['cantidad'] ?>x</span>
-                                    <div>
-                                        <p class="font-bold text-slate-800 dark:text-slate-100 text-sm leading-snug"><?= e($l['nombre']) ?></p>
-                                    </div>
+                                <div class="bg-stone-900/70 rounded-2xl p-4 border border-stone-700/50 flex items-start gap-3">
+                                    <span class="font-black text-brand-500 text-xl shrink-0"><?= (int) $l['cantidad'] ?>x</span>
+                                    <p class="font-bold text-white text-lg leading-snug"><?= e($l['nombre']) ?></p>
                                 </div>
                             <?php endforeach; ?>
                         </div>
 
-                        <div class="w-full bg-slate-50 text-slate-600 text-xs font-bold rounded-2xl py-3 flex items-center justify-center gap-2 border border-slate-100/80">
-                            <i data-lucide="download" class="w-4 h-4 text-slate-400"></i> Esperando domiciliario
+                        <div class="w-full bg-stone-900/70 text-stone-400 text-sm font-bold rounded-2xl py-4 flex items-center justify-center gap-2 border border-stone-700/50">
+                            <i data-lucide="bike" class="w-5 h-5"></i> Esperando domiciliario
                         </div>
                     </div>
                 <?php endforeach; ?>
 
                 <?php if (empty($tablero['listo'])): ?>
-                    <div class="bg-white dark:bg-[#1a1a1a] rounded-3xl p-10 text-center border border-slate-100/80 dark:border-stone-800 flex flex-col items-center justify-center text-slate-400 min-h-[280px]">
-                        <i data-lucide="package-check" class="w-12 h-12 mb-3 text-slate-300 stroke-[1.5]"></i>
-                        <p class="text-sm font-semibold text-slate-400">Sin pedidos listos</p>
+                    <div class="bg-stone-800/60 rounded-[32px] p-10 text-center border border-stone-700/50 flex flex-col items-center justify-center text-stone-500 min-h-[240px]">
+                        <i data-lucide="package-check" class="w-12 h-12 mb-3 stroke-[1.5]"></i>
+                        <p class="text-base font-bold">Sin pedidos listos</p>
                     </div>
                 <?php endif; ?>
             </div>
@@ -214,4 +239,3 @@ $cols = [
 </div>
 
 <?php $segundos = 15; require dirname(__DIR__) . "/partials/autorefresh.php"; ?>
-

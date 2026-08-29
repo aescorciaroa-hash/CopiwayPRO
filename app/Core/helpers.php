@@ -143,16 +143,31 @@ function mods_html(array $personalizaciones): string
     return implode(' · ', $out);
 }
 
-/** Etiqueta y color de badge para un estado de pedido. */
+/**
+ * Etiqueta y color del badge para un estado de pedido.
+ * Devuelve un array asociativo: ['texto' => ..., 'clases' => ...].
+ */
 function estado_badge(string $estado): array
 {
-    return [
-        'pendiente'      => ['Pendiente', 'bg-amber-100 text-amber-700'],
-        'en_preparacion' => ['En Cocina', 'bg-blue-100 text-blue-700'],
-        'listo'          => ['Listo', 'bg-purple-100 text-purple-700'],
-        'en_camino'      => ['En Camino', 'bg-brand-100 text-brand-700'],
-        'entregado'      => ['Entregado', 'bg-emerald-100 text-emerald-700'],
-        'cancelado'      => ['Cancelado', 'bg-red-100 text-red-700'],
-    ][$estado] ?? [ucfirst($estado), 'bg-gray-100 text-gray-700'];
+    if ($estado === 'pendiente') {
+        return ['texto' => 'Pendiente', 'clases' => 'bg-amber-100 text-amber-700'];
+    }
+    if ($estado === 'en_preparacion') {
+        return ['texto' => 'En Cocina', 'clases' => 'bg-blue-100 text-blue-700'];
+    }
+    if ($estado === 'listo') {
+        return ['texto' => 'Listo', 'clases' => 'bg-purple-100 text-purple-700'];
+    }
+    if ($estado === 'en_camino') {
+        return ['texto' => 'En Camino', 'clases' => 'bg-brand-100 text-brand-700'];
+    }
+    if ($estado === 'entregado') {
+        return ['texto' => 'Entregado', 'clases' => 'bg-emerald-100 text-emerald-700'];
+    }
+    if ($estado === 'cancelado') {
+        return ['texto' => 'Cancelado', 'clases' => 'bg-red-100 text-red-700'];
+    }
+    // Cualquier otro estado no previsto: gris y con la primera letra en mayuscula.
+    return ['texto' => ucfirst($estado), 'clases' => 'bg-gray-100 text-gray-700'];
 }
 

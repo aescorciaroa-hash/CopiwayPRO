@@ -1,4 +1,5 @@
-storage/logs/ 
-storage/cache/ 
+storage/logs/
+storage/cache/
+storage/php.ini
 .DS_Store 
 Thumbs.db 

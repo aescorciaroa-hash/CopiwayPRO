@@ -73,15 +73,20 @@ class Auth
         }
     }
 
-    /** Ruta del panel segun el rol. */
+    /** Ruta del panel de inicio segun el rol. */
     public static function homeFor(string $role): string
     {
-        return match ($role) {
-            'admin'        => '/admin',
-            'cocina'       => '/kitchen',
-            'domiciliario' => '/delivery',
-            default        => '/client',
-        };
+        if ($role === 'admin') {
+            return '/admin';
+        }
+        if ($role === 'cocina') {
+            return '/kitchen';
+        }
+        if ($role === 'domiciliario') {
+            return '/delivery';
+        }
+        // Por defecto (rol "cliente" o cualquier otro): la tienda del cliente.
+        return '/client';
     }
 }
 
