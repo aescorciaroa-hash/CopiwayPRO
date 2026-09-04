@@ -41,27 +41,33 @@ echo $cliente['nombre'];   // Juan
 
 ---
 
-## 3. Programación Orientada a Objetos (POO)
+## 3. Programación Orientada a Objetos (la parte que se usa aquí)
 
 ### Clase y objeto
 
 Una **clase** es un molde. Un **objeto** es algo hecho con ese molde.
 
 ```php
-class Router {
-    private array $routes = [];          // propiedad (dato del objeto)
+class Producto {
+    private $conn;                        // propiedad (dato del objeto)
 
-    public function get($path, $action) { // método (función del objeto)
-        $this->routes[] = [$path, $action];
+    public function __construct() {       // constructor
+        global $conn;
+        $this->conn = $conn;              // inyecta la conexión global
     }
+
+    public function find($id) { ... }     // método (función del objeto)
 }
 
-$router = new Router();      // creamos un OBJETO
-$router->get('/', 'HomeController@index');   // llamamos un método con ->
+$productoModel = new Producto();          // creamos un OBJETO
+$p = $productoModel->find('abc-123');     // llamamos un metodo con ->
 ```
 
 - `$this` → "yo mismo", el objeto actual.
 - `->` → acceder a una propiedad o método de un objeto.
+
+En Copiway **todos los modelos siguen exactamente este patrón**: constructor que toma
+`global $conn`, y métodos que hacen consultas preparadas.
 
 ### Visibilidad
 
@@ -71,75 +77,69 @@ $router->get('/', 'HomeController@index');   // llamamos un método con ->
 | `private` | solo dentro de la misma clase |
 | `protected` | dentro de la clase y sus hijas (herencia) |
 
-### `static` (muy usado en este proyecto)
+Los modelos guardan `private $conn` y exponen sus consultas como `public function`.
 
-Un método/propiedad `static` **pertenece a la clase**, no a un objeto. Se llama con
-`::` y **sin crear objeto**.
+### `static`
 
-```php
-class Database {
-    public static function all(string $sql, array $params = []): array { ... }
-}
-
-// No hago "new Database()". Llamo directo:
-$productos = Database::all("SELECT * FROM PRODUCTO");
-```
-
-En Copiway, `Database`, `Auth`, `Session`, `Producto::catalogo()`, etc. son estáticos:
-son "utilidades" que no necesitan guardar estado por objeto.
-
-### Herencia (`extends`) y clases abstractas
+Un método `static` **pertenece a la clase**, no a un objeto. Se llama con `::` y
+**sin crear objeto**:
 
 ```php
-abstract class Model {                 // abstract = no se puede instanciar sola
-    protected static string $table = '';
-    public static function find($id): ?array { ... }
-}
-
-class Cliente extends Model {           // Cliente HEREDA todo lo de Model
-    protected static string $table = 'CLIENTE';
-    protected static string $key = 'id_cliente';
-}
-
-Cliente::find('abc-123');   // usa el find() heredado, pero con la tabla CLIENTE
+Session::start();
+Auth::login('cliente', $datos);
+Periodo::rango('semana');
+Configuracion::value('tarifa_plana_domicilio', 6000);
 ```
 
-`Controller` también es abstracta: da métodos comunes (`view()`, `json()`, `validate()`)
-a todos los controladores.
+En Copiway son estaticas las utilidades de `app/Core/` (`Session`, `Auth`, `Periodo`),
+porque no necesitan guardar estado por objeto. **Los modelos NO son estáticos**: hay
+que instanciarlos con `new` porque cada uno guarda su propia conexión.
+
+> Ojo con esto en el examen: se escribe `new Producto()` y `$productoModel->catalogo()`,
+> **no** `Producto::catalogo()`.
+
+### Constantes de clase
+
+```php
+class Pedido {
+    public const ESTADOS = ['pendiente', 'en_preparacion', 'listo', 'en_camino', 'entregado', 'cancelado'];
+}
+```
+
+Se leen con `Pedido::ESTADOS`. `Periodo::OPCIONES` funciona igual.
+
+### Herencia y clases abstractas
+
+PHP las tiene (`extends`, `abstract`), pero **este proyecto no las usa**: no hay clase
+base `Model` ni clase base `Controller`. Cada modelo es una clase independiente y cada
+controlador es un script plano. Se decidió así para que no haya nada oculto que haya
+que explicar.
 
 ---
 
-## 4. Namespaces y autoload
+## 4. Cómo se cargan los archivos: `require_once`
 
-### Namespace = "apellido" de la clase
-
-Evita choques de nombres. Se declara arriba del archivo:
-
-```php
-namespace App\Core;      // este archivo vive en el namespace App\Core
-
-class Router { ... }      // su nombre completo es App\Core\Router
-```
-
-Para usar una clase de otro namespace:
+**El proyecto no usa namespaces ni autoload.** No hay `namespace App\Core;`, no hay
+`use App\Models\Pedido;` y no hay Composer. Cada archivo carga a mano lo que necesita:
 
 ```php
-use App\Models\Pedido;   // "importo" el nombre
-$p = Pedido::find($id);   // ahora puedo escribir solo "Pedido"
-```
-
-### Inclusiones con `require_once`
-
-Se utiliza la función `require_once` para cargar los modelos e intermediarios necesarios en cada controlador o script:
-
-```php
-require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/database.php';   // la conexión $conn
+require_once __DIR__ . '/../Core/helpers.php';
 require_once __DIR__ . '/../Models/Pedido.php';
 
 $pedidoModel = new Pedido();
 ```
 
----
+- `require_once` incluye el archivo **una sola vez**, aunque se pida varias veces. Por eso
+  no importa que cinco controladores pidan `Session.php`: solo se carga la primera vez.
+- `__DIR__` es la carpeta del archivo actual; con `/../` se sube de nivel. Así las rutas
+  funcionan sin importar desde dónde se llame al script.
+- `public/index.php` carga de entrada el núcleo y **los 11 modelos**, porque es la puerta
+  de todas las peticiones.
+
+> Un namespace sería el "apellido" de una clase, para evitar choques de nombres cuando
+> hay muchas librerías. Aquí, con 11 modelos propios y sin dependencias externas, no hace
+> falta: los nombres no chocan con nada.
 
 ## 5. Arrays y funciones útiles
 
@@ -167,7 +167,7 @@ foreach ($productos as $p) { echo $p['nombre']; }               // recorre
 | `...` | *spread* | `$fn(...$params)` | "desempaqueta" un array como argumentos |
 | `[...]` | *destructuring* | `[$a, $b] = [1, 2]` | asigna varias variables a la vez |
 
-### `match` (usado en `Auth`, `Controller::validate`, `Periodo`)
+### `match` (usado en `Periodo::rango`)
 
 Es como un `switch` pero:
 - compara con `===` (tipo estricto),

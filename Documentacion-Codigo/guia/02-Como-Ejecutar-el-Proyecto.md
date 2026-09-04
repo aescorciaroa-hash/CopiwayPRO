@@ -36,18 +36,24 @@ Las dos funcionan igual: la URL base se detecta sola en `app/Core/helpers.php`
 
 ## Configuración de la conexión
 
-Está en `config/config.php`:
+La conexión real está en **`config/database.php`**, con los datos escritos directamente
+en el archivo:
 
 ```php
-'db' => [
-    'host'     => '127.0.0.1',
-    'port'     => '3306',
-    'name'     => 'hamburguer_copiway',
-    'user'     => 'root',
-    'password' => '',          // Laragon por defecto no tiene contraseña
-    'charset'  => 'utf8mb4',
-],
+$host     = '127.0.0.1';
+$user     = 'root';
+$password = '';               // Laragon por defecto no tiene contraseña
+$dbname   = 'hamburguer_copiway';
+
+$conn = new mysqli($host, $user, $password, $dbname);
 ```
+
+> ⚠️ **Los datos de conexión están duplicados.** `config/config.php` trae otro bloque
+> `'db' => [...]`, y ese lo lee **`database/install.php`** (el instalador), mientras que
+> la aplicación se conecta con `config/database.php`. Si cambias la contraseña de MySQL
+> **hay que editar los dos archivos**, o el instalador funcionará y la aplicación no (o al
+> revés). De `config.php` se usa además `app.base_url`, que lee `app/Core/helpers.php`
+> para calcular `APP_BASE`.
 
 ## Usuarios de ejemplo (los del seed)
 

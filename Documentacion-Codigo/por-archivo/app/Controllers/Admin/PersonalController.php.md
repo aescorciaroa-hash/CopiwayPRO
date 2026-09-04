@@ -1,45 +1,51 @@
 # `app/Controllers/Admin/PersonalController.php`
 
 ## Ubicación
-`app/Controllers/Admin/PersonalController.php` · namespace `App\Controllers\Admin`
+`app/Controllers/Admin/PersonalController.php`
 
 ## Propósito
-**Equipo y Personal** (`/admin/personal`): alta, edición, baja (soft delete),
-reactivación y borrado de ayudantes de cocina y domiciliarios.
+Script procesador de **Equipo y Personal**: alta, edición, baja (soft delete),
+reactivación y eliminación definitiva de ayudantes de cocina y domiciliarios.
 
-## Dependencias
-`Controller`, `Auth`, `Session`, `App\Models\Empleado`, `App\Models\Usuario`.
+El listado `/admin/personal` (GET) lo arma `public/index.php` con `Empleado::todos()`.
 
-## Métodos
+## Dependencias (`require_once`)
+`config/database.php`, `Core/helpers.php`, `Core/Session.php`, `Core/Auth.php`,
+`Models/Empleado.php`, `Models/Usuario.php`.
 
-### `index(): string` — `GET /admin/personal`
-Vista con `empleados` (`Empleado::todos()` — cocina + domiciliarios unidos) y
-`activos` (contador para el KPI).
+## Acciones (`$action`)
 
-### `crear(): string` — `POST /admin/personal`
-1. `verifyCsrf()` + `validate(nombre, correo, telefono, contrasena min 6,
-   rol in:cocina,domiciliario)`.
-2. `Usuario::existeCorreoOTelefono` → si ya existe, error.
-3. `Empleado::crear($d['rol'], $d, Auth::id())` — inserta en `AYUDANTE_COCINA` o
-   `DOMICILIARIO`, guarda hash, marca `creado_por`.
+Todas las rutas llevan el **`{rol}`** (`cocina` o `domiciliario`) dentro de la URL;
+`public/index.php` lo extrae y lo deja en `$_POST['rol']`.
 
-### `datos(string $rol, string $id): string` — `GET /admin/personal/{rol}/{id}`
-`Empleado::buscar($rol, $id)` en JSON (modal de edición).
+### `cargar` — `GET /admin/personal/{rol}/{id}`
+`Empleado::buscar($rol, $id)` → **JSON** sin el campo `contrasena` (404 si no existe).
+Alimenta el modal de edición.
 
-### `actualizar(string $rol, string $id): string` — `POST /admin/personal/{rol}/{id}`
-`Empleado::actualizar($rol, $id, $this->all())`. Solo cambia la contraseña si viene una nueva.
+> Ojo: la acción se llama **`cargar`** (no `datos`).
 
-### `baja(string $rol, string $id): string` — `POST .../baja`
-`Empleado::darDeBaja` → **soft delete** (`activo = 0`). Conserva el historial.
+### `crear` — `POST /admin/personal`
+1. Valida `nombre`, `correo` y `contrasena`.
+2. `Usuario::existeCorreoOTelefono($correo, $telefono)` → rechaza duplicados
+   (comprueba las 4 tablas de cuentas).
+3. `Empleado::crear($rol, $_POST, Auth::id())`.
 
-### `reactivar(string $rol, string $id): string` — `POST .../reactivar`
-`Empleado::reactivar` → `activo = 1`.
+### `actualizar` — `POST /admin/personal/{rol}/{id}`
+`Empleado::actualizar($rol, $id, $_POST)`.
 
-### `eliminar(string $rol, string $id): string` — `POST .../eliminar`
-`Empleado::eliminar` → **borrado real**, pero solo si no tiene pedidos. Si tiene →
-flash "solo puedes darlo de baja".
+### `baja` — `POST /admin/personal/{rol}/{id}/baja`
+`Empleado::darDeBaja(...)` → **soft delete** (`activo = 0`), conserva el historial.
+
+### `reactivar` — `POST /admin/personal/{rol}/{id}/reactivar`
+`Empleado::reactivar(...)` → `activo = 1`.
+
+### `eliminar` — `POST /admin/personal/{rol}/{id}/eliminar`
+`Empleado::eliminar(...)`. Devuelve `false` si el empleado tiene pedidos asociados:
+en ese caso se muestra un flash de advertencia y **no** se borra.
+
+Cualquier otro `$action` → `redirect('/admin/personal')`.
 
 ## Notas
-- El parámetro `{rol}` de la URL es `cocina` o `domiciliario` y decide en qué tabla
-  trabajar.
-- Regla de negocio: nunca se borra a alguien con historial (integridad de reportes).
+- Todas las acciones POST terminan en `redirect('/admin/personal')` (**PRG**), con flash
+  de tipo `staff` o `danger`.
+- El hash bcrypt de la contraseña lo hace el modelo `Empleado`, no este script.

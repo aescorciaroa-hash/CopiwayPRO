@@ -1,40 +1,44 @@
 # `app/Controllers/Admin/InventarioController.php`
 
 ## Ubicación
-`app/Controllers/Admin/InventarioController.php` · namespace `App\Controllers\Admin`
+`app/Controllers/Admin/InventarioController.php`
 
 ## Propósito
-**Inventario Express** (`/admin/inventario`): registrar insumos comprados y ajustar el
-stock rápido (+1 / −1 / fijar valor).
+Script procesador del **Inventario Express**: alta de insumos y ajustes rápidos de stock.
 
-## Dependencias
-`Controller`, `Auth`, `Session`, `App\Models\Ingrediente`, `App\Models\Categoria`.
+La pantalla `/admin/inventario` (GET) la arma `public/index.php` (insumos, críticos,
+categorías, KPIs y movimientos).
 
-## Métodos
+## Dependencias (`require_once`)
+`config/database.php`, `Core/helpers.php`, `Core/Session.php`, `Core/Auth.php`,
+`Models/Ingrediente.php`, `Models/Categoria.php`.
 
-### `index(): string` — `GET /admin/inventario`
-Lee `?q=` (búsqueda). Vista con:
-`insumos` (`Ingrediente::conCategoria`), `kpis` (`Ingrediente::kpis`),
-`movimientos` (`Ingrediente::movimientos(30)`), `categorias` (`Categoria::deInsumos`, para el modal).
+## Acciones (`$action`)
 
-### `guardarInsumo(): string` — `POST /admin/inventario/insumo`
-1. `verifyCsrf()` + `validate(nombre, id_categoria, unidad_medida, cantidad, costo_total)`.
-2. **Calcula el costo unitario:** `costo_total / cantidad` (redondeado a 2 decimales).
-3. `Ingrediente::insert([... cantidad_stock, umbral_minimo (10 por defecto), costo_unitario,
-   precio_extra, proveedor ...])`.
-4. `Ingrediente::moverStock($id, 'entrada', $cantidad, 'Registro inicial de compra', Auth::id())`
-   — deja registro del movimiento.
-5. Flash + redirect.
+### `guardarInsumo` — `POST /admin/inventario/insumo`
+1. Valida que haya `nombre`, `id_categoria` y `cantidad > 0`.
+2. Calcula `costo_unitario = round(costo_total / cantidad, 2)`.
+3. `Ingrediente::guardar([...])` **con `cantidad_stock = 0`**.
+4. `Ingrediente::moverStock($id, 'entrada', $cantidad, 'Registro inicial de compra', Auth::id())`.
 
-### `ajustar(string $id): string` — `POST /admin/inventario/insumo/{id}/ajuste`
-Lee `accion` (`mas` / `menos` / `set`) y `valor`:
-- `set` → `moverStock($id, 'ajuste', $valor, 'Ajuste manual de inventario', ...)`
-  (fija el stock a `$valor`).
-- `mas` → `moverStock(..., 'entrada', ..., 'Reabastecimiento rapido', ...)`.
-- `menos` → `moverStock(..., 'salida', ..., 'Salida / merma rapida', ...)`.
+> El stock nunca se escribe directo: se crea el insumo en 0 y es el **movimiento de
+> entrada** el que fija la cantidad real. Así queda registrado en el historial y no se
+> duplica la cantidad.
+
+### `ajustar` — `POST /admin/inventario/insumo/{id}/ajuste`
+Según `$_POST['accion']`:
+
+| `accion` | Movimiento | Motivo |
+|---|---|---|
+| `set` | `ajuste` | `Ajuste manual de inventario` |
+| `mas` | `entrada` | `Reabastecimiento rapido` |
+| `menos` | `salida` | `Salida / merma rapida` |
+
+La cantidad sale de `$_POST['valor']`. Los botones `+1` / `−1` de la tabla mandan `valor = 1`.
+
+Cualquier otro `$action` → `redirect('/admin/inventario')`.
 
 ## Notas
-- El descuento **por venta** NO pasa por aquí: lo hace el trigger `trg_pago_aprobado`
-  de la base de datos. Aquí solo hay ajustes manuales del admin.
-- `Ingrediente::moverStock` actualiza `cantidad_stock` **y** registra en
-  `MOVIMIENTO_INVENTARIO`.
+- Ambas acciones terminan en `redirect('/admin/inventario')` (**PRG**), con flash de tipo
+  `inventory` o `success`.
+- Cada movimiento queda firmado con `Auth::id()` (quién lo hizo).

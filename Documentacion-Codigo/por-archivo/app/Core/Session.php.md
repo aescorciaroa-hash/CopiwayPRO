@@ -1,7 +1,7 @@
 # `app/Core/Session.php`
 
 ## Ubicación
-`app/Core/Session.php` · namespace `App\Core`
+`app/Core/Session.php`
 
 ## Propósito
 Envoltorio de la sesión PHP (`$_SESSION`). Añade **mensajes flash** (toasts que duran
@@ -22,9 +22,14 @@ una petición) y el **token CSRF**.
 ### Mensajes flash (toasts)
 - `flash(string $type, string $title, string $message = '')` — apila un mensaje en
   `$_SESSION['_flash']`. `$type` = `success`, `danger`, `warning`, `cart`, `staff`,
-  `config`, `inventory`, `cierre`, `whatsapp`… (el partial `toast.php` les da color e icono).
-- `pullFlash(): array` — **devuelve y borra** todos los mensajes. Lo llama `View::render`
-  para pasárselos al layout.
+  `config`, `inventory`, `cierre`, `whatsapp` (el partial `toast.php` les da color e icono;
+  `AuthController` usa además `info`, que no está en esas listas y sale sin color).
+- `pullFlash(): array` — **devuelve y borra** todos los mensajes.
+
+  > Ojo: `partials/toast.php`, que es quien pinta los toasts en los 6 layouts, **no usa
+  > este método**: lee `$_SESSION['_flash']` y hace `unset()` por su cuenta. Los únicos
+  > que llaman a `pullFlash()` son las dos pantallas de PIN de estación
+  > (`kitchen/estacion.php` y `delivery/estacion.php`), que no tienen layout.
 
 ### CSRF
 - `csrf(): string` — si no existe, genera un token de 64 hex
@@ -33,8 +38,12 @@ una petición) y el **token CSRF**.
   `hash_equals` compara en **tiempo constante** (no filtra info por el tiempo de respuesta).
 
 ## Notas
-- El helper `csrf_field()` imprime `<input type="hidden" name="_csrf" value="<token>">`.
-- `Controller::verifyCsrf()` usa `checkCsrf()` en cada POST.
+- El helper `csrf_field()` imprime `<input type="hidden" name="_csrf" value="<token>">`,
+  y los layouts publican el mismo token en `<meta name="csrf-token">` para que
+  `Copiway.post()` lo mande en las peticiones `fetch`.
+- ⚠️ **`checkCsrf()` no se llama en ningún punto del sistema.** El token se genera y se
+  envía, pero hoy ningún script lo valida: no existe un `verifyCsrf()` central. Ver la
+  advertencia de `guia/12-Seguridad.md` §3.
 - El carrito del cliente vive en `$_SESSION['carrito']` (lo maneja el modelo `Carrito`).
 - Los datos del login están en `$_SESSION['auth_role']` y `$_SESSION['auth_user']`
   (los maneja `Auth`).

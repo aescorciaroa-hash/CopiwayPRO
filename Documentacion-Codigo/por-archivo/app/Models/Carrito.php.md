@@ -1,14 +1,22 @@
 # `app/Models/Carrito.php`
 
 ## Ubicación
-`app/Models/Carrito.php` · namespace `App\Models` · **no extiende `Model`** (servicio de sesión)
+`app/Models/Carrito.php`
 
 ## Propósito
 El **carrito de compras**, guardado en `$_SESSION['carrito']` (no en la base de datos).
 Cada item guarda producto, precio base, cantidad y personalizaciones.
 
 ## Dependencias
-`App\Core\Session`. Usa `Producto`.
+Instancia `Producto` dentro de `agregar()` para leer nombre y precio.
+Escribe directamente sobre `$_SESSION['carrito']` (no pasa por `Session::`).
+
+## Cómo se usa
+```php
+require_once __DIR__ . '/../Models/Carrito.php';
+$carritoModel = new Carrito();
+$items = $carritoModel->items();
+```
 
 ## Formato de un item
 ```php
@@ -22,11 +30,11 @@ Cada item guarda producto, precio base, cantidad y personalizaciones.
 ]
 ```
 
-## Métodos (todos `static`)
+## Métodos (de instancia, se llaman con `->`)
 
 | Método | Qué hace |
 |--------|----------|
-| `items(): array` | `Session::get('carrito', [])` |
+| `items(): array` | `$_SESSION['carrito'] ?? []` |
 | `cantidad(): int` | suma de las cantidades de todos los items |
 | `subtotalItem(array $item): float` | `(precio_base + Σ costos de extras) * cantidad` |
 | `subtotal(): float` | suma de `subtotalItem` de todos |
@@ -34,6 +42,9 @@ Cada item guarda producto, precio base, cantidad y personalizaciones.
 | `actualizar($key, $cantidad, $personalizaciones = null)` | cambia cantidad; si `<= 0` lo elimina |
 | `quitar($key)` / `vaciar()` | eliminar uno / todos |
 | `aLineas(): array` | convierte el carrito al formato que espera `PedidoServicio::crear()` (`id_producto`, `cantidad`, `personalizaciones` con `accion` normalizada a `quitar`/`agregar`) |
+
+> El constructor guarda `$conn` en `$this->conn`, pero el modelo **no consulta la base
+> de datos**: todo vive en la sesión.
 
 ## Notas
 - La **`key`** hace que dos hamburguesas idénticas (mismo producto + mismas

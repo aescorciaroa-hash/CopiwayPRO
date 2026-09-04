@@ -36,6 +36,8 @@ Sirve para buscar credenciales entre las **4 tablas de cuentas** (`ADMINISTRADOR
 | `directorio($buscar)` | Consulta para el admin con total gastado y número de pedidos. |
 | `historial($idCliente)` | Historial de pedidos realizados por el cliente. |
 | `esCumpleanos($cliente)` | Compara `MM-DD` de `fecha_nacimiento` con hoy para activar el 15% de descuento. |
+| `pedidosActivos($idCliente)` | Pedidos en curso del cliente (con datos del domiciliario). Alimenta `/client/ordenes`. |
+| `find($id)` | El cliente por su id. |
 
 ---
 
@@ -49,7 +51,7 @@ Sirve para buscar credenciales entre las **4 tablas de cuentas** (`ADMINISTRADOR
 | `darDeBaja($rol, $id)` | **Soft delete**: Marca `activo = 0` conservando el historial. |
 | `reactivar($rol, $id)` | Marca `activo = 1`. |
 | `eliminar($rol, $id)` | Elimina el registro si no posee pedidos en el historial. |
-| `activos()` | Retorna número de colaboradores activos. |
+| `activos()` | Devuelve un **entero**: cuántos ayudantes + domiciliarios están activos (para el KPI del tablero). No devuelve la lista. |
 
 ---
 
@@ -71,6 +73,12 @@ Soporta los ámbitos `menu`, `insumo_alimenticio` y `empaque_desechable` para ca
 | `guardarReceta($id, $items)` | Actualiza la lista de ingredientes de la receta. |
 | `tienePedidos($id)` | Verifica si el producto tiene historial de ventas. |
 | `personalizables($id)` | Ingredientes para modificación (SIN / EXTRA). |
+| `ingredientesCreador()` | Ingredientes con precio calculado para "Arma tu Burger" (`costo_unitario * (1 + margen/100)`). |
+| `conCategoria($id)` | Un producto con el nombre de su categoría (lo usan los modales). |
+| `guardar($datos)` | Crea o edita el producto según venga o no `id_producto`. |
+| `cambiarEstado($id, $estado)` | `activo` ↔ `oculto`. |
+| `eliminar($id)` | Borra solo si `!tienePedidos($id)`; devuelve `false` si no puede. |
+| `find($id)` | El producto crudo por su id. |
 
 ---
 
@@ -80,7 +88,11 @@ Soporta los ámbitos `menu`, `insumo_alimenticio` y `empaque_desechable` para ca
 |--------|----------|
 | `conCategoria($buscar)` | Lista insumos con valorización y alertas de stock bajo. |
 | `criticos()` | Insumos por debajo del umbral mínimo. |
-| `moverStock($id, $tipo, $cantidad, $motivo, $idAdmin)` | Registra movimientos de inventario (`entrada`, `salida`, `ajuste`) en `MOVIMIENTO_INVENTARIO`. |
+| `moverStock($id, $tipo, $cantidad, $motivo, $idAdmin)` | Registra movimientos de inventario (`entrada`, `salida`, `ajuste`) en `MOVIMIENTO_INVENTARIO` **y actualiza `cantidad_stock`**. |
+| `kpis()` | Totales de valorización e insumos críticos para la cabecera de Inventario. |
+| `movimientos()` | Últimos movimientos registrados. |
+| `guardar($datos)` | Alta o edición de un insumo. |
+| `find($id)` | El insumo por su id. |
 
 ---
 
@@ -94,6 +106,13 @@ Soporta los ámbitos `menu`, `insumo_alimenticio` y `empaque_desechable` para ca
 | `contarPorEstado()` | Conteo de pedidos en cada estado activo. |
 | `activos()` | Pedidos en curso (`pendiente`, `en_preparacion`, `listo`, `en_camino`). |
 | `completo($idPedido)` | Consulta relacional completa del pedido con sus líneas y personalizaciones. |
+| `detalle($idPedido)` | Solo las líneas del pedido, con sus personalizaciones. |
+| `rankingProductos($desde, $hasta)` | Productos más vendidos del período. |
+| `recientes($limite)` | Últimos pedidos, para el tablero. |
+| `find($id)` | El pedido crudo por su id. |
+
+> `delTurno()` existe en el modelo pero **ya no la llama nadie**: el tablero de comandas
+> usa `activos()`. Es código muerto.
 
 ---
 
@@ -108,12 +127,30 @@ Modelo central para la creación de comandas e intermediación de estados:
 
 ## `Carrito` — Gestión en $_SESSION['carrito']
 
-Almacena la cesta de compras del cliente en la superglobal `$_SESSION['carrito']` y proporciona métodos auxiliares para sumar subtotales y convertir la cesta a líneas de pedido.
+Almacena la cesta de compras del cliente en la superglobal `$_SESSION['carrito']`:
+`items()`, `cantidad()`, `subtotalItem()`, `subtotal()`, `agregar()`, `actualizar()`,
+`quitar()`, `vaciar()` y `aLineas()` (convierte la cesta al formato que espera
+`PedidoServicio::crear`).
+
+> ⚠️ **El carrito no se guarda en la base de datos.** Vive solo en la sesión y
+> `Auth::logout()` lo borra. Es la única parte del sistema donde el código se aparta del
+> requerimiento RF-20, que pedía sincronizarlo con la BD.
 
 ---
 
 ## `Configuracion` y `CierreCaja`
 
-- **`Configuracion`**: Maneja la tabla `CONFIGURACION_SISTEMA`, el estado de la cocina (`cocinaAbierta()`), la tarifa plana de envío y parámetros globales.
-- **`CierreCaja`**: Calcula y guarda en transacciones MySQLi el reporte diario de caja (`calcular()` y `generar()`).
+- **`Configuracion`**: Maneja la tabla `CONFIGURACION_SISTEMA` (que tiene **una sola fila**).
+  - `get()` — la fila completa.
+  - `value($clave, $defecto)` — un ajuste suelto; es `static`, se llama `Configuracion::value(...)`.
+  - `save([$clave => $valor, ...])` — guarda uno o varios ajustes.
+  - `cocinaAbierta()` — `true` si estamos en horario **y** la pausa de emergencia está apagada.
+  - `estadoCocina()` — array `['abierta', 'pausa', 'apertura', 'cierre']`, que es lo que
+    consumen el checkout y el tablero del admin.
+- **`CierreCaja`**: El reporte diario de caja.
+  - `calcular($fecha)` — **solo calcula**, no escribe nada.
+  - `generar($fecha, $idAdmin)` — guarda en `REPORTE_CAJA` + `DETALLE_AUDITORIA` +
+    `LIQUIDACION_DOMICILIARIO` dentro de una transacción MySQLi.
+  - `obtener($fecha)` — recupera el cierre de un día.
+  - `recientes()` — los últimos cierres, para el listado de Ajustes.
 

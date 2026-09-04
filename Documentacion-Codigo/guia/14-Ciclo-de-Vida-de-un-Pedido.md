@@ -17,29 +17,34 @@ pendiente → en_preparacion → listo → en_camino → entregado
 | `listo` | terminado, esperando domiciliario | Cocina ("Marcar listo") |
 | `en_camino` | el domiciliario salió | Domiciliario ("Iniciar ruta") |
 | `entregado` | entregado y cobrado | Domiciliario ("Entregar" + PIN) |
-| `cancelado` | anulado | admin (casos excepcionales) |
+| `cancelado` | anulado | *previsto en el ENUM, pero **ninguna pantalla lo usa** todavía* |
 
 ---
 
 ## Paso a paso
 
 ### 1. El cliente arma el pedido
-- `CatalogoController::index` muestra el menú (productos no agotados).
-- El cliente personaliza (modal) → `CarritoController::agregar` → `Carrito` (sesión).
-- Va al carrito → `CheckoutController::index`.
+- `public/index.php` (`case '/client'`) muestra el menú, marcando los agotados.
+- El cliente abre el modal → `GET /client/producto/{id}` → `CatalogoController`,
+  acción `personalizar` (JSON con los ingredientes SIN / EXTRA).
+- Al añadir → `POST /client/carrito/agregar` → `CarritoController`, acción `agregar`
+  → `Carrito` (sesión).
+- Va al carrito y al checkout (`case '/client/carrito'` y `case '/client/checkout'`).
   - Si la cocina está **cerrada** → bloquea.
   - Si es su **cumpleaños** → calcula 15% de descuento sobre el subtotal.
 
-### 2. Confirma y paga → `CheckoutController::confirmar`
+### 2. Confirma y paga → `CheckoutController`, acción `confirmar`
 ```php
-$idPedido = PedidoServicio::crear([
+$idPedido = $servicioModel->crear([
     'id_cliente'          => Auth::id(),
     'direccion_entrega'   => $direccion,
-    'metodo_pago'         => $metodo,           // 'digital' o 'efectivo'
+    'canal_origen'        => 'web',
+    'metodo_pago'         => $metodo,                 // 'digital' o 'efectivo'
     'descuento_cumpleanos'=> $descuento,
-    'lineas'              => Carrito::aLineas(),
+    'aprobar_pago'        => ($metodo === 'digital'), // <- regla "cero credito"
+    'lineas'              => $carritoModel->aLineas(),
 ]);
-Carrito::vaciar();
+$carritoModel->vaciar();
 redirect('/client/ordenes');
 ```
 
@@ -56,30 +61,41 @@ redirect('/client/ordenes');
 ### 3. La cocina lo prepara → `KdsController`
 - El tablero KDS (`kitchen/index`) divide visualmente los pedidos en 3 columnas limpias: **Pendientes**, **En Preparación** y **Listos**.
 - Cuenta con barra superior interactiva con cronómetro de tiempo promedio (8.5 min), botón de activación de sonido de alertas y reloj digital en tiempo real.
-- "Preparar" → `cambiarEstado($id, 'en_preparacion', ['id_ayudante' => Auth::id()])` (la tarjeta pasa a la columna central con borde de resplandor rojo).
-- "Imprimir tirilla" → `tirilla($id)` marca `tirilla_impresa` e inicia la impresión táctil.
-- "Marcar listo" → `cambiarEstado($id, 'listo')` (mueve el pedido a la columna de Listos).
+- "Preparar" → `POST /kitchen/pedido/{id}/preparar` → `KdsController`, acción `preparar`
+  → `cambiarEstado($id, 'en_preparacion', ['id_ayudante' => Auth::id()])` (la tarjeta pasa
+  a la columna central con borde de resplandor rojo).
+- "Imprimir tirilla" → `GET /kitchen/pedido/{id}/tirilla`, que sirve `public/index.php`
+  directamente (vista sin layout, lista para imprimir).
+- "Marcar listo" → `POST /kitchen/pedido/{id}/listo` → `KdsController`, acción `listo`
+  → `cambiarEstado($id, 'listo')` (mueve el pedido a la columna de Listos).
 - Cada cambio genera una `NOTIFICACION` automática en tiempo real para el cliente.
 
 ### 4. El domiciliario lo lleva → `PanelController`
 - La interfaz táctica split-screen (`delivery/index`) presenta los pedidos disponibles en el sidebar izquierdo junto con un mapa Leaflet interactivo a pantalla completa a la derecha.
 - Muestra el estado de disponibilidad del domiciliario con switch interactivo.
-- "Tomar" → `UPDATE PEDIDO SET id_domiciliario = ?` + su estado a `en_ruta`. Cada tarjeta incluye el banner en naranja `¡COBRAR EN EFECTIVO: $X!`, botón directo a WhatsApp para contactar al cliente, y enlaces instantáneos a **Waze** y **Google Maps**.
-- "Iniciar ruta" → `cambiarEstado($id, 'en_camino')` (notifica al cliente).
+- "Tomar" → `UPDATE PEDIDO SET id_domiciliario = ?`
+  **`WHERE estado = 'listo' AND id_domiciliario IS NULL`** (así dos repartidores no
+  pueden quedarse con el mismo pedido) + su estado a `en_ruta`. Cada tarjeta incluye el banner en naranja `¡COBRAR EN EFECTIVO: $X!`, botón directo a WhatsApp para contactar al cliente, y enlaces instantáneos a **Waze** y **Google Maps**.
+- "Iniciar ruta" → `POST /delivery/pedido/{id}/iniciar`, que `public/index.php` traduce
+  a la acción `iniciarRuta` → `cambiarEstado($id, 'en_camino')` (notifica al cliente).
 - El mapa en vivo proyecta la ruta desde la sede hasta la ubicación con card flotante de destino (`Llegada est: 12 mins`) y barra flotante inferior de acciones.
 - "Entregar" → abre el modal flotante y valida `hash_equals($p['pin_entrega'], $input)`:
   - si el pago era **efectivo** → `aprobarPago($id)` → **⚡ ahora sí** se descuenta inventario y se suman puntos vía trigger,
-  - `cambiarEstado($id, 'entregado')`,
-  - si no quedan más pedidos pendientes asignados, el domiciliario vuelve automáticamente a `disponible`.
+  - `cambiarEstado($id, 'entregado')`.
 
-### 5. El cliente hace seguimiento → `OrdenesController`
+  > Nota: el domiciliario **no** vuelve solo a `disponible` al terminar; tiene que
+  > cambiar él mismo el switch de disponibilidad (`POST /delivery/disponibilidad`).
+
+### 5. El cliente hace seguimiento → `/client/ordenes`
 - Barra de progreso Recibido → Cocina → Listo → En Camino.
 - Muestra el PIN de entrega.
 - Al entregarse, el pedido pasa al **Historial** (`HistorialController`), donde puede:
-  - **calificar** (1–5 estrellas) → `RESENA`,
-  - **"Recomprar en 1 clic"** → mete las mismas líneas al carrito.
+  - **calificar** (1–5 estrellas) → `HistorialController`, acción `resena` → tabla `RESENA`
+    (una por pedido: si ya existe, se actualiza),
+  - **"Recomprar en 1 clic"** → `HistorialController`, acción `recomprar`, que **primero**
+    comprueba que ninguna línea esté agotada y solo entonces las mete al carrito.
 
-### 6. El admin cierra la caja → `AjustesController::generarCierre`
+### 6. El admin cierra la caja → `AjustesController`, acción `generarCierre`
 - `CierreCaja::generar($fecha, Auth::id())`:
   - totales efectivo/digital,
   - escandallo (consumo de insumos del día),

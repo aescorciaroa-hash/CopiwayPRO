@@ -1,50 +1,50 @@
 # `app/Controllers/Admin/MenuController.php`
 
 ## Ubicación
-`app/Controllers/Admin/MenuController.php` · namespace `App\Controllers\Admin`
+`app/Controllers/Admin/MenuController.php`
 
 ## Propósito
-**Gestión de Menú** (`/admin/menu`): crear/editar/ocultar/eliminar productos y su
-**receta** (escandallo), y administrar categorías.
+Script procesador de la **Gestión del Menú**: productos, su **receta** (escandallo) y
+las categorías del menú.
 
-## Dependencias
-`Controller`, `Session`, `Database`, `App\Models\Producto`, `App\Models\Categoria`,
-`App\Models\Ingrediente`.
+La pantalla `/admin/menu` (GET) la arma `public/index.php` (productos, categorías con
+conteo, ingredientes para los modales).
 
-## Métodos
+## Dependencias (`require_once`)
+`config/database.php`, `Core/helpers.php`, `Core/Session.php`,
+`Models/Producto.php`, `Models/Categoria.php`, `Models/Ingrediente.php`.
 
-### `index(): string` — `GET /admin/menu`
-Lee `?categoria=` y `?q=` (filtro y búsqueda). Vista con:
-`productos` (`Producto::paraAdmin`), `categorias` (`Categoria::conConteo('menu')`),
-`ingredientes` (`Ingrediente::conCategoria`, para el selector de receta), `filtroCat`, `buscar`.
+## Acciones (`$action`)
 
-### `datosProducto(string $id): string` — `GET /admin/menu/producto/{id}`
-JSON con el producto + su `receta` (`Producto::receta`) + su `costo`
-(`Producto::costoReceta`). Para el modal de edición.
+### `cargarProducto` — `GET /admin/menu/producto/{id}`
+Devuelve **JSON** con `Producto::conCategoria($id)` más la clave `receta`
+(`Producto::receta($id)`). 404 con `{"error": ...}` si no existe.
+Alimenta el modal de edición.
 
-### `guardarProducto(): string` — `POST /admin/menu/producto`
-1. `verifyCsrf()` + `validate(nombre, id_categoria, precio)`.
-2. Arma `$datos` (categoría, nombre, descripción, precio, imagen, etiqueta).
-3. Si viene `id_producto` → `Producto::update` (mensaje "Actualizado").
-   Si no → añade `estado = 'activo'` y `Producto::insert` (mensaje "Publicado").
-4. **Receta:** lee los arrays paralelos `receta_ingrediente[]` y `receta_cantidad[]`,
-   arma `$items` y llama `Producto::guardarReceta($id, $items)` (borra y reinserta).
-5. Flash + `redirect('/admin/menu')`.
+> Ojo: la acción se llama **`cargarProducto`** (no `datosProducto`).
 
-### `cambiarEstado(string $id): string` — `POST .../producto/{id}/estado`
-Alterna `activo` ↔ `oculto`. Flash "marcado como Disponible/Oculto".
+### `guardarProducto` — `POST /admin/menu/producto`
+1. Valida `nombre` e `id_categoria`.
+2. `Producto::guardar([...])` — **crea o edita** según venga o no `$_POST['id_producto']`.
+3. Arma la receta con los arrays paralelos `receta_ingrediente[]` y `receta_cantidad[]`
+   y llama `Producto::guardarReceta($id, $items)`.
 
-### `eliminarProducto(string $id): string` — `POST .../producto/{id}/eliminar`
-Si `Producto::tienePedidos($id)` → **no** deja borrar ("tiene historial, ocúltalo").
-Si no → `Producto::delete($id)`.
+### `cambiarEstado` — `POST /admin/menu/producto/{id}/estado`
+Lee el producto y **alterna** `activo` ↔ `oculto`.
 
-### `crearCategoria(): string` — `POST /admin/menu/categoria`
-`Categoria::insert(['nombre' => ..., 'ambito' => 'menu'])`.
+### `eliminarProducto` — `POST /admin/menu/producto/{id}/eliminar`
+`Producto::eliminar($id)`. Si devuelve `false` (el producto tiene historial de ventas),
+muestra un flash de advertencia en vez de borrar.
 
-### `eliminarCategoria(string $id): string` — `POST .../categoria/{id}/eliminar`
-Cuenta productos con esa categoría; si hay → no deja borrar ("reasígnalos primero").
+### `crearCategoria` — `POST /admin/menu/categoria`
+`Categoria::crear(['nombre' => ..., 'ambito' => 'menu'])`.
+
+### `eliminarCategoria` — `POST /admin/menu/categoria/{id}/eliminar`
+`Categoria::eliminar($id)`.
+
+Cualquier otro `$action` → `redirect('/admin/menu')`.
 
 ## Notas
-- La receta se guarda con **arrays paralelos** del formulario (índice `i` empareja
-  `receta_ingrediente[i]` con `receta_cantidad[i]`).
-- No se puede borrar un producto con ventas ni una categoría en uso (integridad histórica).
+- Todas las acciones POST terminan en `redirect('/admin/menu')` (**PRG**).
+- `public/index.php` deduce el `$action` mirando el final de la ruta y extrae el `{id}`
+  con una expresión regular, poniéndolo en `$_POST['id']`.

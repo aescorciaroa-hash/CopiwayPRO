@@ -8,9 +8,13 @@ Estas son las reglas propias del negocio "Dark Kitchen". Cada una dice **qué es
 ## 1. Cero Crédito (el pago va primero)
 
 - **Qué:** un pedido **no llega a la cocina** hasta que su `PAGO.estado = 'aprobado'`.
-- **Dónde:** `PedidoServicio::crear()` inserta el pago como `pendiente`. Solo si el
-  método es `digital` o es un pedido manual, llama `aprobarPago()`. El pedido en efectivo
-  se aprueba cuando el domiciliario lo entrega y cobra.
+- **Dónde:** `PedidoServicio::crear()` inserta el pago como `pendiente` y solo llama
+  `aprobarPago()` si recibe `aprobar_pago => true`. Quien decide ese flag:
+  - `CheckoutController` (acción `confirmar`) → `true` solo si el método es `digital`;
+  - `ComandasController` (acción `crearManual`) → siempre `true`.
+
+  El pedido en efectivo se aprueba cuando el domiciliario lo entrega y cobra
+  (`PanelController`, acción `entregar`).
 - **Por qué:** una cocina fantasma no puede permitirse preparar comida que quizá nadie
   pague.
 
@@ -24,15 +28,19 @@ Estas son las reglas propias del negocio "Dark Kitchen". Cada una dice **qué es
 ## 3. Punto de No Retorno
 
 - **Qué:** una vez el cliente confirma el pago, ya no puede cancelar.
-- **Dónde:** el checkout muestra un aviso azul; después no hay ninguna acción de
-  "cancelar" en el panel del cliente.
+- **Dónde:** el checkout muestra un aviso; después no existe ninguna acción de
+  "cancelar" en el panel del cliente. El estado `cancelado` está en el `ENUM` de la tabla
+  `PEDIDO`, pero **ninguna pantalla lo usa** todavía.
 - **Por qué:** protege el trabajo ya iniciado en cocina.
 
 ## 4. Horarios Automáticos
 
 - **Qué:** fuera del horario (`horario_apertura`–`horario_cierre`) no se puede pagar.
-- **Dónde:** `Configuracion::cocinaAbierta()`; `CheckoutController::index()` bloquea el
-  botón "Pagar" si `!estadoCocina['abierta']`.
+- **Dónde:** `Configuracion::cocinaAbierta()` decide; `Configuracion::estadoCocina()`
+  lo empaqueta para la vista. `public/index.php` (`case '/client/checkout'`) le pasa
+  `$estado` a la vista para atenuar el botón "Pagar", y `CheckoutController` (acción
+  `confirmar`) vuelve a comprobarlo antes de crear el pedido —- así no basta con forzar
+  el formulario.
 - **Por qué:** no aceptar pedidos que no se pueden preparar.
 
 ## 5. Pausa de Emergencia (Botón de Pánico)
@@ -52,8 +60,9 @@ Estas son las reglas propias del negocio "Dark Kitchen". Cada una dice **qué es
 
 - **Qué:** el día del cumpleaños del cliente, 15% de descuento **sobre el subtotal**
   (no sobre el envío).
-- **Dónde:** `Cliente::esCumpleanos()` compara `MM-DD`; `CheckoutController` calcula
-  `round($subtotal * 0.15)` y lo pasa como `descuento_cumpleanos`.
+- **Dónde:** `Cliente::esCumpleanos()` compara `MM-DD`; `CheckoutController`
+  (acción `confirmar`) calcula `round($subtotal * 0.15)` y lo pasa como
+  `descuento_cumpleanos` a `PedidoServicio::crear()`.
 
 ## 8. Inventario por Receta (Escandallo)
 
@@ -86,21 +95,26 @@ Estas son las reglas propias del negocio "Dark Kitchen". Cada una dice **qué es
 
 - **Qué:** al "dar de baja" un empleado no se borra: se pone `activo = 0`. Solo se
   puede borrar de verdad si **nunca** tuvo pedidos.
-- **Dónde:** `Empleado::darDeBaja()` / `Empleado::eliminar()`.
+- **Dónde:** `Empleado::darDeBaja()` / `Empleado::eliminar()`, que se invocan desde
+  `PersonalController` con las acciones `baja` y `eliminar`. `eliminar()` devuelve `false`
+  si el empleado tiene pedidos, y entonces el controlador solo muestra un aviso.
 - **Por qué:** conservar el historial y los reportes.
+- Lo mismo aplica a los productos: `Producto::eliminar()` no borra si `tienePedidos()`.
 
 ## 13. Botón de Última Milla / Validación por PIN
 
 - **Qué:** el domiciliario solo marca "entregado" si teclea el **PIN de 4 dígitos** que
   le muestra el cliente.
-- **Dónde:** `PanelController::entregar()` → `hash_equals($p['pin_entrega'], $input)`.
+- **Dónde:** `PanelController`, acción `entregar` →
+  `hash_equals((string) $p['pin_entrega'], $pin)`.
   El PIN se genera al crear el pedido (trigger `trg_pedido_pin`).
 
 ## 14. Pedido Manual (Llamada / WhatsApp)
 
 - **Qué:** el admin registra pedidos que llegan por teléfono. Se crea un cliente mínimo
   si no existe (por teléfono).
-- **Dónde:** `ComandasController::crearManual()` + `PedidoServicio::clienteParaManual()`.
+- **Dónde:** `ComandasController`, acción `crearManual` +
+  `PedidoServicio::clienteParaManual()`.
   Entra directo a cocina (`aprobar_pago = true`), se cobra al entregar.
 - El código del pedido lleva prefijo **`#MAN-`** en vez de `#ORD-`.
 
@@ -120,6 +134,7 @@ Estas son las reglas propias del negocio "Dark Kitchen". Cada una dice **qué es
 
 - **Qué:** el cliente construye una hamburguesa capa por capa; el precio se calcula con
   el **margen de ganancia** configurado sobre el costo de cada ingrediente.
-- **Dónde:** `Producto::ingredientesCreador()` usa
-  `costo_unitario * (1 + margen/100)`. `CreadorController` guarda todo como extras de un
-  producto oculto "Hamburguesa Personalizada".
+- **Dónde:** `Producto::ingredientesCreador()` usa `costo_unitario * (1 + margen/100)`.
+  `CreadorController` (acción `agregar`) guarda todo como extras de un producto oculto
+  "Hamburguesa Personalizada", que crea la primera vez que alguien usa el creador.
+  Si un ingrediente tiene `precio_extra` propio, ese manda sobre el cálculo del margen.

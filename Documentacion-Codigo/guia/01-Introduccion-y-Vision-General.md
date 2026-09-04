@@ -32,7 +32,7 @@ El sistema cubre **todo el proceso**:
 |------|-----------|----------|
 | Lenguaje servidor | **PHP 8.1** | Toda la lógica |
 | Base de datos | **MySQL 8** (vía Laragon) | Guardar la información |
-| Acceso a datos | **PDO** (extensión de PHP) | Conectarse a MySQL de forma segura |
+| Acceso a datos | **MySQLi** (extensión de PHP) | Conectarse a MySQL con consultas preparadas |
 | Estilos | **Tailwind CSS** (por CDN) | Diseño visual con clases utilitarias |
 | Interactividad | **Alpine.js** (por CDN) | Modales, menús, cosas que cambian sin recargar |
 | Mapas | **Leaflet + OpenStreetMap** | Ver rutas de domiciliarios |
@@ -40,12 +40,16 @@ El sistema cubre **todo el proceso**:
 
 ## Decisiones de diseño importantes
 
-- **Sin framework**: se escribió un mini-framework propio (carpeta `app/Core`) para
-  que se entienda cada parte. Es más fácil de explicar en un examen que Laravel.
-- **MVC**: separamos **Modelo** (datos), **Vista** (HTML) y **Controlador** (lógica).
-- **Front Controller**: una sola puerta de entrada (`public/index.php`).
-- **PDO + consultas preparadas**: nunca se pega texto del usuario dentro del SQL,
-  se usan `?` como marcadores. Esto evita **inyección SQL**.
+- **Sin framework y sin POO compleja**: PHP plano. `app/Core` no es un mini-framework,
+  son cuatro archivos de utilidades (`Session`, `Auth`, `Periodo`, `helpers`).
+  Más fácil de explicar en un examen que Laravel.
+- **Sin namespaces ni autoload**: todo se carga con `require_once` explícito.
+- **MVC simplificado**: **Modelo** (clases con consultas), **Vista** (HTML) y
+  **Controlador** (scripts planos que procesan `$_POST` / `$_GET`).
+- **Front Controller**: una sola puerta de entrada (`public/index.php`), que además
+  lleva el enrutado y el control de acceso por rol.
+- **MySQLi + consultas preparadas**: nunca se pega texto del usuario dentro del SQL,
+  se usan `?` como marcadores y `bind_param`. Esto evita **inyección SQL**.
 - **Triggers en la base de datos**: algunas reglas (generar IDs, descontar inventario)
   las hace MySQL solo, no PHP.
 

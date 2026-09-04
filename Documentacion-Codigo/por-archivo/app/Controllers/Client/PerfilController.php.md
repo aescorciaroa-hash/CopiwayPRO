@@ -1,38 +1,37 @@
 # `app/Controllers/Client/PerfilController.php`
 
 ## Ubicación
-`app/Controllers/Client/PerfilController.php` · namespace `App\Controllers\Client`
+`app/Controllers/Client/PerfilController.php`
 
 ## Propósito
-**Gestión de Cuenta** del cliente (`/client/perfil`): editar datos personales y cambiar
-la contraseña. También muestra los puntos de fidelidad.
+Script procesador del **perfil del cliente**: datos personales y cambio de contraseña.
 
-## Dependencias
-`Controller`, `Auth`, `Session`, `App\Models\Cliente`.
+La pantalla `/client/perfil` (GET) la arma `public/index.php`.
 
-## Métodos
+## Dependencias (`require_once`)
+`config/database.php`, `Core/helpers.php`, `Core/Session.php`, `Core/Auth.php`,
+`Models/Cliente.php`.
 
-### `index(): string` — `GET /client/perfil`
-Vista `client/perfil` con `cliente` = `Cliente::find(Auth::id())`.
+## Acciones (`$action`)
 
-### `actualizar(): string` — `POST /client/perfil`
-1. `verifyCsrf()` + `validate(nombre 3–120, telefono min 7, fecha_nacimiento date)`.
-2. `Cliente::update(Auth::id(), [nombre, telefono, direccion, fecha_nacimiento])`.
-3. `Auth::refresh(['nombre' => ..., 'telefono' => ...])` — actualiza la sesión para que
-   el nombre nuevo se vea de inmediato en la cabecera.
-4. Flash + redirect.
+### `actualizar` — `POST /client/perfil`
+Es la acción por defecto de la ruta.
 
-> Poner la **fecha de nacimiento** activa el 15% de descuento el día del cumpleaños.
+1. Exige `nombre` y `telefono`.
+2. `UPDATE CLIENTE SET nombre, telefono, direccion, fecha_nacimiento WHERE id_cliente = ?`
+   con sentencia preparada sobre `$conn`.
+3. **`Auth::refresh(['nombre' => ..., 'telefono' => ...])`** — actualiza también la copia
+   que hay en sesión, para que la cabecera muestre el nombre nuevo sin volver a entrar.
 
-### `password(): string` — `POST /client/perfil/password`
-1. `verifyCsrf()`.
-2. `password_verify($actual, $cliente['contrasena'])` — si la actual no coincide →
-   flash "Contraseña incorrecta".
-3. Si la nueva tiene < 6 caracteres o no coincide con la confirmación → flash de error.
-4. `Cliente::update(Auth::id(), ['contrasena' => password_hash($nueva, PASSWORD_BCRYPT)])`.
-5. Flash "Contraseña actualizada".
+### `password` — `POST /client/perfil/password`
+1. Lee la contraseña guardada del cliente logueado.
+2. `password_verify($actual, $row['contrasena'])`; si falla → flash y vuelve.
+3. Exige que la nueva tenga **6+ caracteres** y coincida con la confirmación.
+4. `password_hash($nueva, PASSWORD_BCRYPT)` y `UPDATE CLIENTE SET contrasena = ?`.
+
+Cualquier otro `$action` → `redirect('/client/perfil')`.
 
 ## Notas
-- Cambiar la contraseña **siempre** exige conocer la actual (defensa contra secuestro
-  de sesión).
-- El correo no se puede cambiar aquí (es identificador de login).
+- La `fecha_nacimiento` que se guarda aquí es la que habilita el **descuento de
+  cumpleaños del 15%** (`Cliente::esCumpleanos`).
+- El correo **no** se puede cambiar desde el perfil (es la llave del login).

@@ -1,19 +1,23 @@
 # `app/Models/Producto.php`
 
 ## Ubicación
-`app/Models/Producto.php` · namespace `App\Models` · **extends `Model`**
+`app/Models/Producto.php`
 
 ## Propósito
 Tabla `PRODUCTO`. Catálogo, recetas (escandallo), cálculo de costo, detección de
 "AGOTADO" y opciones de personalización.
 
-## Configuración
+## Cómo se usa
+No es una clase estática y no hereda de nada. Se instancia y recibe la conexión global
+en el constructor:
+
 ```php
-protected static string $table = 'PRODUCTO';
-protected static string $key   = 'id_producto';
+require_once __DIR__ . '/../Models/Producto.php';
+$productoModel = new Producto();
+$productoModel->catalogo();
 ```
 
-### `const AGOTADO_EXPR`
+### `const AGOTADO_EXPR` (privada)
 Trozo de SQL reutilizable: subconsulta que da `1` si al producto le falta stock de
 **algún** ingrediente de su receta:
 ```sql
@@ -21,7 +25,19 @@ Trozo de SQL reutilizable: subconsulta que da `1` si al producto le falta stock 
  WHERE r.id_producto = p.id_producto AND i.cantidad_stock < r.cantidad_necesaria) > 0 AS agotado
 ```
 
-## Métodos propios
+## Métodos
+
+### `find($id): ?array`
+El producto crudo por su id, o `null`.
+
+### `guardar(array $d): string`
+Crea o edita según venga o no `id_producto`. Devuelve el id.
+
+### `cambiarEstado($id, $estado): void`
+`activo` ↔ `oculto`.
+
+### `eliminar($id): bool`
+Borra solo si `!tienePedidos($id)`; si no, devuelve `false` y el controlador avisa.
 
 | Método | Qué hace |
 |--------|----------|

@@ -1,7 +1,7 @@
 # `app/Core/Periodo.php`
 
 ## Ubicación
-`app/Core/Periodo.php` · namespace `App\Core`
+`app/Core/Periodo.php`
 
 ## Propósito
 Traduce una palabra (`hoy`, `semana`, `semana_pasada`, `mes`, `mes_pasado`) a un
@@ -36,4 +36,5 @@ defecto seguro). Protege contra valores manipulados en la URL.
 ## Notas
 - `DateTimeImmutable` = fecha que **no se modifica** al hacer `->modify(...)` (devuelve
   una copia). Evita errores sutiles.
-- Lo usan `DashboardController` y `CierreCaja`.
+- Lo usa el tablero analítico del admin: el `case '/admin'` de `public/index.php`,
+  que lee el filtro de `?periodo=` y se lo pasa a `Periodo::valida()` y `Periodo::rango()`.

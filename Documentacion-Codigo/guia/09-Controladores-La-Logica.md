@@ -1,149 +1,218 @@
 # 09 · Controladores (la lógica)
 
-Un controlador es una clase con métodos. Cada método atiende una ruta. El patrón
-siempre es el mismo:
+## Qué es un controlador en este proyecto
+
+**No es una clase.** Es un **script PHP plano** que se ejecuta de arriba abajo, mira la
+variable `$action` y hace lo que toque. Siempre tiene la misma forma:
 
 ```php
-public function index(): string
-{
-    // 1. (si es POST) verificar CSRF y validar datos
-    // 2. pedir datos a los modelos
-    // 3a. si es GET  -> devolver una vista:   return $this->view('...', [...], 'layout');
-    // 3b. si es POST -> hacer el cambio y redirigir:  redirect('/...'); return '';
+<?php
+// 1. Cargar lo que necesita (no hay autoload)
+require_once __DIR__ . '/../../../config/database.php';
+require_once __DIR__ . '/../../Core/helpers.php';
+require_once __DIR__ . '/../../Core/Session.php';
+require_once __DIR__ . '/../../Models/LoQueSea.php';
+
+// 2. Leer la accion pedida
+$action = $_GET['action'] ?? $_POST['action'] ?? '';
+
+// 3. Instanciar los modelos
+$modelo = new LoQueSea();
+
+// 4. Una rama por accion
+if ($action === 'guardar') {
+    // validar $_POST -> llamar al modelo -> dejar un flash -> redirigir
+    $_SESSION['_flash'][] = ['type' => 'success', 'title' => '...', 'message' => '...'];
+    redirect('/admin/loquesea');
+}
+elseif ($action === 'otra') { ... }
+else {
+    redirect('/admin/loquesea');   // accion desconocida: de vuelta a la pantalla
 }
 ```
 
-Todos heredan de `App\Core\Controller` (métodos `view`, `json`, `input`, `validate`,
-`verifyCsrf`, `back`).
+Puntos clave:
+
+- **No hay clase base `Controller`**, ni `$this->view()`, ni `$this->json()`, ni
+  `$this->validate()`. Cada script valida a mano con `if` y `trim()`.
+- **No hay namespaces.** Todo se carga con `require_once` y se instancia con `new`.
+- **Los controladores no pintan pantallas.** Solo procesan POST y devuelven JSON. Las
+  vistas GET las arma `public/index.php`.
+- Toda acción POST termina en `redirect(...)` → patrón **Post-Redirect-Get**.
+
+## Quién decide el `$action`
+
+Los formularios **no** mandan un campo `action`. Lo deduce `public/index.php` mirando el
+final de la ruta, y recién entonces hace `require` del script:
+
+```php
+if (str_starts_with($uri, '/admin/menu')) {
+    if     (str_ends_with($uri, '/producto')) $_POST['action'] = 'guardarProducto';
+    elseif (str_contains($uri, '/estado'))    $_POST['action'] = 'cambiarEstado';
+    // ...
+    require dirname(__DIR__) . '/app/Controllers/Admin/MenuController.php';
+    exit;
+}
+```
+
+También extrae los `{id}` y `{rol}` de la URL y los deja en `$_POST['id']` / `$_POST['rol']`.
+
+## Dónde está la lógica de cada pantalla GET
+
+Las pantallas **no tienen controlador**. Su código está en el `switch ($uri)` de
+`public/index.php`, que consulta los modelos y renderiza la vista con su layout:
+
+| Pantalla | Dónde está su lógica |
+|---|---|
+| `/` (landing) | `public/index.php`, `case '/'` (era `HomeController`) |
+| `/admin` (tablero) | `public/index.php`, `case '/admin'` (era `DashboardController`) |
+| `/admin/rutas` | `public/index.php`, `case '/admin/rutas'` (era `RutasController`) |
+| `/client/ordenes` | `public/index.php`, `case '/client/ordenes'` (era `OrdenesController`) |
+| El resto de pantallas | su `case` correspondiente en `public/index.php` |
+
+> Esos cuatro controladores **ya no existen como archivo**: se absorbieron en el front
+> controller durante la simplificación.
 
 ---
 
-## `HomeController`
-- `index()` → la landing page pública (`/`). Muestra menú, "nosotros", contacto, mapa.
+## `AuthController.php` — login, registro, recuperación
 
-## `AuthController` (login, registro, recuperar)
+| `$action` | Ruta | Qué hace |
+|---|---|---|
+| `login` | POST `/login` | `Usuario::porCorreo` → `verificarPassword` (bcrypt) → comprueba `activo` → `Auth::login` → redirige según el rol |
+| `register` | POST `/register` | Valida campo por campo, exige **habeas data**, rechaza correo/teléfono duplicado, `Cliente::registrar` y entra directo |
+| `forgot` | POST `/forgot-password` | Flujo **simulado**: siempre el mismo mensaje, no consulta la BD |
+| `logout` | POST `/logout` | `Auth::logout()` + flash + `/login` |
 
-| Método | Ruta | Qué hace |
-|--------|------|----------|
-| `showLogin()` | GET `/login` | si ya hay sesión, redirige al panel; si no, muestra el login |
-| `login()` | POST `/login` | valida → `Usuario::porCorreo` → `password_verify` → comprueba `activo` → `Auth::login` → redirige según el rol (cocina/domi pasan primero por su login de estación) |
-| `showRegister()` / `register()` | `/register` | registra un **cliente**: valida, comprueba duplicados, exige aceptar habeas data, hashea la clave, inicia sesión |
-| `showForgot()` / `forgot()` | `/forgot-password` | flujo **simulado** (en producción enviaría un código) |
-| `logout()` | POST `/logout` | `Auth::logout()` + mensaje + a `/login` |
-| `devLogin($correo)` | GET `/_dev/login/{correo}` | **solo con debug**: login sin contraseña, para pruebas |
+En el registro, los errores se guardan en `$_SESSION['_errors']` y lo escrito en
+`$_SESSION['_old']`; la vista los lee con los helpers `error()` y `old()`.
+
+> El logout **por GET** no pasa por aquí: lo resuelve `public/index.php` directamente.
+> Y no existe ningún login de desarrollo sin contraseña.
 
 ---
 
 ## Panel del **Administrador** (`app/Controllers/Admin/`)
 
-### `DashboardController`
-- `index()` → Tablero. Filtra por `Periodo` (hoy/semana/mes…). Trae KPIs, ventas por
-  día, ranking de productos, pedidos recientes, contadores por estado, estado de cocina.
-- `datos()` → los mismos datos en JSON (para refresco sin recargar).
+### `ComandasController.php`
+| `$action` | Qué hace |
+|---|---|
+| `detalle` | `Pedido::completo($id)` + `codigo` → **JSON** para el modal (404 si no existe) |
+| `crearManual` | Pedido por teléfono/WhatsApp: `PedidoServicio::clienteParaManual()` busca o crea el cliente por teléfono, y `PedidoServicio::crear()` va con **`aprobar_pago = true`** (entra directo a cocina) |
+| `editarDireccion` | `PedidoServicio::editarDireccion($id, $dir)` |
 
-### `ComandasController`
-- `index()` → tablero de comandas del turno (`Pedido::delTurno`) como tarjetas.
-- `detalle($id)` → JSON con el pedido completo (para el modal).
-- `crearManual()` → crea un pedido tomado por teléfono/WhatsApp: busca o crea el cliente
-  (`PedidoServicio::clienteParaManual`), arma las líneas y llama `PedidoServicio::crear`
-  con `aprobar_pago = true` (entra directo a cocina).
-- `editarDireccion($id)` → corrige la dirección de entrega.
+### `MenuController.php`
+| `$action` | Qué hace |
+|---|---|
+| `cargarProducto` | JSON del producto **+ su receta**, para el modal de edición |
+| `guardarProducto` | Crea o edita el producto y **su receta** (arrays `receta_ingrediente[]` / `receta_cantidad[]`) |
+| `cambiarEstado` | Alterna `activo` ↔ `oculto` |
+| `eliminarProducto` | `Producto::eliminar($id)`; si devuelve `false` (tiene ventas) avisa y no borra |
+| `crearCategoria` / `eliminarCategoria` | Categorías de ámbito `menu` |
 
-### `RutasController`
-- `index()` → mapa de domiciliarios, pedidos en ruta, despachos recientes.
+### `InventarioController.php`
+| `$action` | Qué hace |
+|---|---|
+| `guardarInsumo` | Calcula `costo_unitario = costo_total / cantidad`, crea el insumo **con stock 0** y registra un movimiento de `entrada` con la cantidad real |
+| `ajustar` | `set` → movimiento `ajuste`; `mas` → `entrada`; `menos` → `salida`. Todo vía `Ingrediente::moverStock` |
 
-### `MenuController`
-- `index()` → catálogo del admin + categorías + ingredientes (para los modales).
-- `guardarProducto()` → crea o edita un producto y **su receta** (arrays
-  `receta_ingrediente[]` y `receta_cantidad[]`).
-- `cambiarEstado($id)` → activo ↔ oculto.
-- `eliminarProducto($id)` → solo si `!Producto::tienePedidos($id)`.
-- `datosProducto($id)` → JSON del producto + receta (para el modal de edición).
-- `crearCategoria()` / `eliminarCategoria($id)`.
+### `PersonalController.php`
+| `$action` | Qué hace |
+|---|---|
+| `cargar` | JSON del empleado **sin la contraseña**, para el modal |
+| `crear` | Valida, rechaza duplicados con `Usuario::existeCorreoOTelefono`, `Empleado::crear` |
+| `actualizar` | `Empleado::actualizar($rol, $id, $_POST)` |
+| `baja` / `reactivar` | **Soft delete**: `activo = 0` / `activo = 1` |
+| `eliminar` | Solo si el empleado no tiene pedidos; si no, avisa y no borra |
 
-### `InventarioController`
-- `index()` → insumos + KPIs + movimientos.
-- `guardarInsumo()` → registra un ingrediente nuevo; calcula
-  `costo_unitario = costo_total / cantidad`.
-- `ajustar($id)` → `+1`, `-1` o "fijar" un valor; usa `Ingrediente::moverStock`.
+### `ClientesController.php`
+| `$action` | Qué hace |
+|---|---|
+| `historial` | JSON con el cliente (sin `contrasena`) y sus pedidos con `codigo` |
 
-### `PersonalController`
-- `index()` → lista combinada (`Empleado::todos`).
-- `crear()` → alta de cocina o domiciliario.
-- `datos($rol, $id)` → JSON para el modal de edición.
-- `actualizar($rol, $id)` / `baja($rol, $id)` / `reactivar($rol, $id)` / `eliminar($rol, $id)`.
+### `AjustesController.php`
+| `$action` | Qué hace |
+|---|---|
+| `tarifa` / `margen` / `horario` | `Configuracion::save([...])` |
+| `pausa` | **Alterna** `pausa_emergencia_activa` |
+| `generarCierre` | `CierreCaja::generar($fecha, Auth::id())` |
 
-### `ClientesController`
-- `index()` → directorio (`Cliente::directorio`).
-- `historial($id)` → JSON con las compras del cliente (para el modal).
-
-### `AjustesController`
-- `index()` → ajustes + resumen de caja.
-- `tarifa()` / `margen()` / `horario()` / `pausa()` → guardan cada ajuste con
-  `Configuracion::save`.
-- `vistaPrevia()` → JSON con el cálculo del cierre (`CierreCaja::calcular`).
-- `generarCierre()` → guarda el cierre (`CierreCaja::generar`).
+> No hay acción de "vista previa" del cierre: la pantalla ya recibe el cálculo desde
+> `public/index.php`.
 
 ---
 
 ## Panel del **Cliente** (`app/Controllers/Client/`)
 
-### `CatalogoController`
-- `index()` → menú, categorías, si es cumpleaños, estado de cocina, último pedido (recompra).
-- `personalizar($id)` → JSON con los ingredientes que se pueden quitar/agregar.
+### `CatalogoController.php`
+| `$action` | Qué hace |
+|---|---|
+| `personalizar` | JSON del producto + `agotado` + `personalizables` (los ingredientes que se pueden quitar o agregar) |
 
-### `CarritoController`
-- `index()` → muestra el carrito.
-- `agregar()` / `actualizar()` / `quitar()` / `vaciar()` → operan sobre `Carrito`.
-  Convierte los `quitar[]` / `extra[]` del formulario en el array de personalizaciones.
+### `CarritoController.php`
+| `$action` | Qué hace |
+|---|---|
+| `agregar` | Rechaza el producto si `estaAgotado()`; convierte `quitar[]` / `extra[]` en personalizaciones y llama `Carrito::agregar` |
+| `actualizar` | Cambia cantidad y, solo si el formulario las mandó, las personalizaciones |
+| `quitar` / `vaciar` | Sobre `$_SESSION['carrito']` |
 
-### `CreadorController`
-- `index()` → "Arma tu Burger": lista de ingredientes con precio.
-- `agregar()` → reutiliza (o crea) un producto oculto "Hamburguesa Personalizada" y
-  añade las capas elegidas como extras.
+La función auxiliar `personalizacionesDesdePost()` es la que traduce el formulario:
+los `quitar[]` son **SIN** (costo 0) y los `extra[]` son **EXTRA** (con `precio_extra`),
+descartando los ingredientes sin stock.
 
-### `CheckoutController`
-- `index()` → si la cocina está cerrada, bloquea. Muestra resumen, calcula descuento
-  de cumpleaños.
-- `confirmar()` → crea el pedido (`PedidoServicio::crear`) con el método de pago
-  elegido; vacía el carrito; redirige a "Órdenes Activas".
+### `CreadorController.php`
+| `$action` | Qué hace |
+|---|---|
+| `agregar` | Reutiliza (o crea) el producto oculto **"Hamburguesa Personalizada"** y mete cada capa como un extra. El precio de la capa es su `precio_extra`, o `costo_unitario * (1 + margen/100)` si no tiene |
 
-### `OrdenesController`
-- `index()` → pedidos activos del cliente con su barra de progreso.
-- `detalle($id)` → JSON del pedido.
+### `CheckoutController.php`
+| `$action` | Qué hace |
+|---|---|
+| `confirmar` | Bloquea si la cocina está cerrada, exige dirección, calcula el 15% de cumpleaños, `PedidoServicio::crear()` con **`aprobar_pago` solo si el pago es digital**, vacía el carrito y va a `/client/ordenes` |
 
-### `HistorialController`
-- `index()` → pedidos pasados, puntos, ahorro; permite filtrar.
-- `recomprar($id)` → mete las mismas líneas del pedido en el carrito (validando stock).
-- `resena($id)` → guarda/actualiza la calificación (1–5 estrellas).
+### `HistorialController.php`
+| `$action` | Qué hace |
+|---|---|
+| `recomprar` | **Primero** valida que ninguna línea esté agotada; solo entonces mete todo al carrito |
+| `resena` | *Upsert* manual sobre `RESENA` (la tabla tiene `UNIQUE(id_pedido)`), puntaje acotado a 1–5 |
 
-### `PerfilController`
-- `index()` → datos del cliente + puntos.
-- `actualizar()` → guarda nombre, correo, teléfono, dirección, fecha de nacimiento.
-- `password()` → cambia la contraseña (verifica la actual primero).
+### `PerfilController.php`
+| `$action` | Qué hace |
+|---|---|
+| `actualizar` | `UPDATE CLIENTE ...` + **`Auth::refresh()`** para que la cabecera muestre el nombre nuevo |
+| `password` | `password_verify` de la actual, exige 6+ caracteres y confirmación, `password_hash` |
 
 ---
 
 ## Panel de **Cocina** (`app/Controllers/Kitchen/KdsController.php`)
 
-- `estacionForm()` / `estacionLogin()` → segundo login con el **PIN de estación**
-  (`pin_estacion_kds`). Marca `estacion_cocina_ok` en la sesión.
-- `requireEstacion()` (privado) → si no está el flag, redirige al login de estación.
-- `index()` → tablero KDS: pedidos por estado (`pendiente`, `en_preparacion`, `listo`),
-  resumen agregado por producto, ingredientes críticos.
-- `preparar($id)` → estado → `en_preparacion` + registra el ayudante.
-- `listo($id)` → estado → `listo` (avisa a logística).
-- `tirilla($id)` → marca `tirilla_impresa` y muestra la tirilla imprimible.
+| `$action` | Qué hace |
+|---|---|
+| `estacionLogin` | `hash_equals` contra `pin_estacion_kds` → `Session::set('estacion_cocina_ok', true)` |
+| `preparar` | `cambiarEstado($id, 'en_preparacion', ['id_ayudante' => Auth::id()])` |
+| `listo` | `cambiarEstado($id, 'listo', ['id_ayudante' => Auth::id()])` |
+
+> **La tirilla no está aquí.** `/kitchen/pedido/{id}/tirilla` la sirve `public/index.php`,
+> cargando la vista sin layout. Y el guardia del PIN tampoco: lo aplica el front controller.
 
 ---
 
 ## Panel del **Domiciliario** (`app/Controllers/Delivery/PanelController.php`)
 
-- `estacionForm()` / `estacionLogin()` → PIN de estación (`pin_estacion_domiciliario`).
-- `index()` → pedidos listos sin domiciliario + mis pedidos asignados (con sus líneas).
-- `disponibilidad()` → me pongo `disponible` / `desconectado`.
-- `tomar($id)` → me asigno un pedido `listo` (y me pongo `en_ruta`).
-- `iniciarRuta($id)` → estado → `en_camino` (avisa al cliente).
-- `entregar($id)` → valida el **PIN de 4 dígitos** que da el cliente
-  (`hash_equals($p['pin_entrega'], $input)`); si es efectivo aprueba el pago; estado →
-  `entregado`; si ya no me quedan pedidos, vuelvo a `disponible`.
+| `$action` | Qué hace |
+|---|---|
+| `estacionLogin` | `hash_equals` contra `pin_estacion_domiciliario` → `estacion_domi_ok` |
+| `disponibilidad` | `UPDATE DOMICILIARIO SET estado_disponibilidad = 'disponible' \| 'desconectado'` |
+| `tomar` | Se autoasigna el pedido con `WHERE estado = 'listo' AND id_domiciliario IS NULL` (evita que dos repartidores tomen el mismo) y se pone `en_ruta` |
+| `iniciarRuta` | `cambiarEstado($id, 'en_camino')`. La URL dice `/iniciar`; el front controller lo traduce |
+| `entregar` | Valida el **PIN de 4 dígitos** con `hash_equals`; si el pago era efectivo llama `aprobarPago()`; luego `cambiarEstado($id, 'entregado')` |
+
+---
+
+## Resumen para el examen
+
+- Un controlador aquí es **un script, no una clase**.
+- Se elige qué hacer con `$action`, que arma `public/index.php` a partir de la ruta.
+- Los controladores **solo** procesan POST y devuelven JSON; las pantallas las monta el
+  front controller.
+- Todo POST acaba en `redirect()` (**PRG**) dejando antes un mensaje en `$_SESSION['_flash']`.

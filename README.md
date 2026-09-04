@@ -47,9 +47,14 @@ Sin paso de compilación: corre directo en Laragon/Apache.
 
 ## Configuración
 
-La conexión a la BD se define en `config/database.php` usando la extensión `mysqli` estándar.
-Las variables de aplicación adicionales están en `config/config.php`.
-Por defecto: `127.0.0.1:3306`, usuario `root`, sin contraseña (Laragon estándar).
+La conexión a la BD se define en **`config/database.php`** usando la extensión `mysqli`
+estándar. Por defecto: `127.0.0.1`, usuario `root`, sin contraseña (Laragon estándar).
+**Si cambias la clave de MySQL, ese es el archivo que hay que editar.**
+
+> ⚠️ Los datos de conexión están **duplicados**: `config/config.php` trae otro bloque
+> `'db' => [...]` que lee **`database/install.php`**. Si cambias la contraseña de MySQL hay
+> que editar los dos archivos. De `config.php` se usa además `app.base_url`, que
+> `app/Core/helpers.php` lee para calcular `APP_BASE`.
 
 ## Estructura
 
@@ -76,7 +81,9 @@ acciones AJAX) y el render de vistas (GET).
 ## Módulos implementados
 
 - **Landing pública** — vitrina, menú, contacto.
-- **Autenticación** — login unificado, registro de cliente (Habeas Data), recuperación.
+- **Autenticación** — login unificado sobre las 4 tablas de cuentas, registro de cliente
+  con aceptación de Habeas Data, y recuperación de contraseña (**flujo simulado**: no
+  envía ni valida códigos todavía).
 - **Cliente** — catálogo con bloqueo "Agotado", personalización (SIN/EXTRA),
   creador interactivo, carrito, checkout (digital/efectivo, tarifa plana, descuento
   de cumpleaños, bloqueo por horario, punto de no retorno), rastreo de órdenes con
@@ -92,4 +99,19 @@ acciones AJAX) y el render de vistas (GET).
 
 El descuento automático de inventario y la suma de puntos al aprobarse un pago los
 ejecuta un **trigger de la base de datos** (`trg_pago_aprobado`).
+
+## Estado conocido
+
+Cosas que aún no están y conviene saber antes de sustentar o de seguir desarrollando:
+
+- **El token CSRF se genera pero no se verifica.** `csrf_field()` lo pone en todos los
+  formularios y `Session::checkCsrf()` existe, pero no se invoca en ningún punto.
+- **No hay página 404**: el `default` del `switch` de `public/index.php` sirve la landing,
+  así que cualquier ruta desconocida cae en el inicio.
+- **RF-20 (persistencia del carrito)**: el carrito vive solo en `$_SESSION` y se pierde al
+  cerrar sesión; el requerimiento pedía sincronizarlo con la base de datos.
+- **Recuperación de contraseña**: simulada, no usa la tabla `CODIGO_VERIFICACION`.
+- **Código sin uso**: `Auth::requireRole()` y `Pedido::delTurno()`.
+
+El detalle de cada punto está en `Documentacion-Codigo/guia/12-Seguridad.md` §12.
 

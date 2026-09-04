@@ -1,20 +1,33 @@
 # `app/Models/Pedido.php`
 
 ## Ubicación
-`app/Models/Pedido.php` · namespace `App\Models` · **extends `Model`**
+`app/Models/Pedido.php`
 
 ## Propósito
 Tabla `PEDIDO`. Contiene las consultas de **lectura** de pedidos (KPIs, listados,
 detalle). La lógica de **escritura** (crear, cambiar estado) está en `PedidoServicio`.
 
-## Configuración
+## Cómo se usa
+No es una clase estática y no hereda de nada. Se instancia y recibe la conexión global
+en el constructor:
+
 ```php
-protected static string $table = 'PEDIDO';
-protected static string $key   = 'id_pedido';
-const ESTADOS = ['pendiente','en_preparacion','listo','en_camino','entregado','cancelado'];
+require_once __DIR__ . '/../Models/Pedido.php';
+$pedidoModel = new Pedido();
+$pedidoModel->activos();
 ```
 
-## Métodos propios
+### `const ESTADOS`
+```php
+public const ESTADOS = ['pendiente','en_preparacion','listo','en_camino','entregado','cancelado'];
+```
+Los 6 valores del `ENUM` de la columna `estado`. Se lee con `Pedido::ESTADOS` (es una
+constante de clase, no hace falta instanciar).
+
+## Métodos
+
+### `find($id): ?array`
+El pedido crudo por su id, o `null`.
 
 ### `codigo(array $pedido): string`
 Código corto legible: `#ORD-XXXX` (canal `web`) o `#MAN-XXXX` (llamada/WhatsApp).
@@ -41,9 +54,12 @@ Cuántos pedidos hay en cada estado activo.
 Pedidos en `pendiente/en_preparacion/listo/en_camino` + cliente, domiciliario, pago y
 `minutos` (`TIMESTAMPDIFF(MINUTE, fecha_hora, NOW())`).
 
-### `delTurno(): array`
-Los `activos` **más** los `entregado`/`cancelado` de las últimas 18 horas. Ordenados
-por prioridad de estado y fecha. Para el tablero de comandas del admin.
+### `delTurno(): array` — **sin uso**
+Los `activos` **más** los `entregado`/`cancelado` de las últimas 18 horas, ordenados por
+prioridad de estado y fecha.
+
+> ⚠️ **Ya no la llama nadie.** El tablero de comandas del admin usa `activos()`.
+> Es código muerto que quedó de una versión anterior.
 
 ### `recientes($limite = 8): array`
 Últimos N pedidos (para el tablero).

@@ -94,8 +94,8 @@ CREATE TRIGGER trg_id_cliente BEFORE INSERT ON CLIENTE FOR EACH ROW
 BEGIN IF NEW.id_cliente = '' THEN SET NEW.id_cliente = UUID(); END IF; END
 ```
 **Traducción:** justo antes de insertar, si la llave viene vacía, genera un UUID.
-Así el PHP puede insertar sin preocuparse por el ID (aunque `Model::insert()` también
-genera uno con `uuid()` — cualquiera de los dos sirve).
+Así el PHP puede insertar sin preocuparse por el ID (aunque los modelos también suelen
+generar uno con el helper `uuid()` — cualquiera de los dos sirve).
 
 ### 2. `trg_pedido_pin` — ID + PIN del pedido
 Antes de insertar un `PEDIDO`: genera el `id_pedido` si falta **y** genera el

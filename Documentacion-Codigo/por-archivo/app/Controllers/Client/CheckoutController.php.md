@@ -1,42 +1,43 @@
 # `app/Controllers/Client/CheckoutController.php`
 
 ## Ubicación
-`app/Controllers/Client/CheckoutController.php` · namespace `App\Controllers\Client`
+`app/Controllers/Client/CheckoutController.php`
 
 ## Propósito
-El **checkout** (`/client/checkout`): confirmar dirección, método de pago y crear el
-pedido.
+Script procesador del **checkout**: convierte el carrito en un `PEDIDO` real.
+Es el punto donde se aplican "cocina cerrada", el descuento de cumpleaños y el
+**punto de no retorno**.
 
-## Dependencias
-`Controller`, `Auth`, `Session`, `App\Models\Carrito`, `App\Models\Cliente`,
-`App\Models\Configuracion`, `App\Models\PedidoServicio`, `App\Models\Pedido`.
+La pantalla `/client/checkout` (GET) la arma `public/index.php`, que ya calcula ahí el
+subtotal, el envío, el descuento, el total y el estado de la cocina.
 
-## Métodos
+## Dependencias (`require_once`)
+`config/database.php`, `Core/helpers.php`, `Core/Session.php`, `Core/Auth.php`,
+`Models/Carrito.php`, `Models/Cliente.php`, `Models/Configuracion.php`,
+`Models/PedidoServicio.php`, `Models/Pedido.php`.
 
-### `index(): string` — `GET /client/checkout`
-1. Si el carrito está vacío → `redirect('/client/carrito')`.
-2. Calcula: `subtotal` (`Carrito::subtotal`), `descuento` (15% si es cumpleaños),
-   `envio` (tarifa plana), `total = max(0, subtotal - descuento) + envio`.
-3. `estado` = `Configuracion::estadoCocina()` (la vista bloquea "Pagar" si está cerrada).
-4. Vista `client/checkout`.
+## Acciones (`$action`)
 
-### `confirmar(): string` — `POST /client/checkout`
-1. `verifyCsrf()`. Si el carrito está vacío → redirect.
-2. **Si la cocina está cerrada** → flash con el horario + `redirect('/client/checkout')`
-   (regla "Horarios Automáticos").
-3. Valida que haya `direccion`. Lee `metodo_pago` (`digital` o `efectivo`).
-4. Recalcula el descuento de cumpleaños (no se fía del formulario).
-5. `PedidoServicio::crear([...
-     'canal_origen' => 'web',
-     'metodo_pago'  => $metodo,
-     'comprobante'  => $metodo === 'digital' ? 'PAGO-XXXXXXXX' : null,
-     'aprobar_pago' => $metodo === 'digital',   // digital entra directo a cocina
-     'lineas'       => Carrito::aLineas(),
-   ])`.
-6. `Carrito::vaciar()`.
-7. Flash "Pedido Confirmado · Punto de no retorno activado" + `redirect('/client/ordenes')`.
+### `confirmar` — `POST /client/checkout`
+`public/index.php` pone `$_POST['action'] = 'confirmar'` si el formulario no manda otra cosa.
+
+1. Si el carrito está vacío → `/client/carrito`.
+2. `Configuracion::estadoCocina()`; si `!$estado['abierta']` → flash con el horario y
+   vuelve a `/client/checkout` (**bloqueo por horario / pausa de emergencia**).
+3. Exige `direccion` no vacía.
+4. `metodo_pago` se normaliza a `digital` o `efectivo` (cualquier otro valor cae en `efectivo`).
+5. Calcula el descuento de cumpleaños: `round($subtotal * 0.15)`.
+6. `PedidoServicio::crear([...])` con:
+   - `canal_origen => 'web'`,
+   - `comprobante` generado (`PAGO-XXXXXXXX`) solo si el pago es digital,
+   - **`aprobar_pago => ($metodo === 'digital')`** — esta es la regla de *cero crédito*:
+     el pago en efectivo queda `pendiente` hasta que el domiciliario entrega.
+7. `Carrito::vaciar()` y redirige a `/client/ordenes` con el código del pedido en el flash.
+
+Cualquier otro `$action` → `redirect('/client/checkout')`.
 
 ## Notas
-- El pago **digital** se aprueba al confirmar (dispara el trigger de inventario).
-- El pago **efectivo** queda pendiente hasta que el domiciliario entrega y cobra.
-- El descuento de cumpleaños se calcula en el servidor, nunca se confía en el cliente.
+- Aprobar el pago dispara el trigger `trg_pago_aprobado` (descuenta inventario y suma
+  puntos). Ver `guia/14-Ciclo-de-Vida-de-un-Pedido.md`.
+- Tras este POST ya no hay ninguna acción de cancelar en el panel del cliente: es el
+  **punto de no retorno**.

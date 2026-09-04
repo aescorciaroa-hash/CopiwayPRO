@@ -1,35 +1,33 @@
 # `app/Controllers/Client/CatalogoController.php`
 
 ## Ubicación
-`app/Controllers/Client/CatalogoController.php` · namespace `App\Controllers\Client`
+`app/Controllers/Client/CatalogoController.php`
 
 ## Propósito
-El **catálogo del cliente** (`/client`): el menú para pedir, con personalización.
+Script procesador del **catálogo del cliente**. Su única responsabilidad es devolver en
+**JSON** los datos que necesita el modal "Personalizar" de un producto.
 
-## Dependencias
-`Controller`, `Auth`, `Database`, `App\Models\Producto`, `App\Models\Categoria`,
-`App\Models\Cliente`, `App\Models\Configuracion`.
+La pantalla `/client` (GET) la arma `public/index.php` (productos, categorías, si es
+cumpleaños, historial y último pedido para la recompra).
 
-## Métodos
+## Dependencias (`require_once`)
+`config/database.php`, `Core/helpers.php`,
+`Models/Producto.php`, `Models/Categoria.php`.
 
-### `index(): string` — `GET /client`
-Trae:
-- `cliente` — `Cliente::find(Auth::id())`.
-- `ultimoPedido` — id del último pedido no cancelado (para el botón "pedir lo mismo").
-- `productos` — `Producto::catalogo()`.
-- `categorias` — `Categoria::menu()`.
-- `cumple` — `Cliente::esCumpleanos($cliente)` (banner de 15%).
-- `estado` — `Configuracion::estadoCocina()`.
+## Acciones (`$action`)
 
-Vista `client/catalogo` (layout `client`).
+### `personalizar` — `GET /client/producto/{id}`
+`public/index.php` captura esa ruta, pone `$_GET['action'] = 'personalizar'` y `$_GET['id']`,
+y hace `require` de este script.
 
-### `personalizar(string $id): string` — `GET /client/producto/{id}`
-JSON para el modal de personalización:
-- el producto con su categoría (`Producto::conCategoria`),
-- `agotado` (`Producto::estaAgotado`),
-- `personalizables` (`Producto::personalizables` → ingredientes que se pueden **quitar**
-  y **extras** que se pueden **agregar**, con su precio y si están agotados).
+1. `Producto::conCategoria($id)`; 404 en JSON si no existe.
+2. Añade `agotado` → `Producto::estaAgotado($id)`.
+3. Añade `personalizables` → `Producto::personalizables($id)`: los ingredientes que se
+   pueden **quitar** (SIN) o **agregar** (EXTRA), con su `precio_extra`.
+4. Emite `Content-Type: application/json` y devuelve el producto.
+
+Cualquier otro `$action` → `redirect('/client')`.
 
 ## Notas
-- Si la sesión apunta a un cliente que ya no existe, `Auth::requireRole` lo desloguea
-  antes de llegar aquí (no revienta).
+- Respuesta JSON pura: no carga layout ni vista.
+- Lo consume `app/Views/client/_modal_personalizar.php` con `fetch`.

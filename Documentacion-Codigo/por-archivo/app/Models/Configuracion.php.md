@@ -1,31 +1,39 @@
 # `app/Models/Configuracion.php`
 
 ## Ubicación
-`app/Models/Configuracion.php` · namespace `App\Models` · **extends `Model`**
+`app/Models/Configuracion.php`
 
 ## Propósito
 Acceso a la **fila única** de `CONFIGURACION_SISTEMA`: horario, tarifa de domicilio,
 margen, pausa de emergencia, umbral de stock, PINs de estación.
 
-## Configuración
+## Cómo se usa
+No es una clase estática y no hereda de nada. Se instancia y recibe la conexión global
+en el constructor:
+
 ```php
-protected static string $table = 'CONFIGURACION_SISTEMA';
-protected static string $key   = 'id_config';
-private static ?array $cache = null;   // caché en memoria
+require_once __DIR__ . '/../Models/Configuracion.php';
+$configModel = new Configuracion();
+$configModel->get();
 ```
 
-## Métodos propios
+## Métodos
 
 ### `get(): array`
-Devuelve la fila única. La guarda en `self::$cache` para no consultar varias veces en
-la misma petición.
+`SELECT * FROM CONFIGURACION_SISTEMA LIMIT 1` — la fila única. **No hay caché**: cada
+llamada consulta la base de datos.
 
-### `value(string $key, $default = null)`
-Un ajuste concreto: `Configuracion::value('tarifa_plana_domicilio', 0)`.
+### `value(string $key, $default = null)` — **el único `static`**
+Un ajuste suelto, sin tener que instanciar el modelo:
+```php
+$tarifa = (float) Configuracion::value('tarifa_plana_domicilio', 6000);
+```
+Internamente toma `global $conn` y hace su propia consulta.
 
 ### `save(array $data): void`
-`self::update($cfg['id_config'], $data)` y **limpia la caché** (`self::$cache = null`)
-para que el nuevo valor se vea al instante.
+Construye el `UPDATE ... SET col = ?, col = ?` a mano a partir de las claves del array,
+deduciendo el tipo de cada valor para `bind_param` (`i` entero, `d` decimal, `s` texto),
+y filtra por el `id_config` de la fila única. Si no hay fila, no hace nada.
 
 ### `cocinaAbierta(): bool`
 `false` si `pausa_emergencia_activa`. Si no: `true` si la hora actual (`date('H:i:s')`)
@@ -40,4 +48,7 @@ Lo usan el checkout, el layout del cliente y el tablero.
 
 ## Notas
 - Implementa las reglas "Horarios Automáticos" y "Pausa de Emergencia".
-- La caché es por-petición (variable estática), no persiste entre peticiones.
+- La comparación de horario es de **cadenas** `'HH:MM:SS'`, así que un horario que
+  cruce la medianoche (p. ej. 18:00–02:00) no funcionaría.
+- `value()` y `get()` consultan cada vez; en una pantalla que las llame varias veces se
+  repiten las consultas. Es aceptable en este proyecto (la tabla tiene una sola fila).

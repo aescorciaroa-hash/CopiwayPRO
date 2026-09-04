@@ -1,54 +1,65 @@
 # `app/Controllers/AuthController.php`
 
 ## Ubicación
-`app/Controllers/AuthController.php` · namespace `App\Controllers`
+`app/Controllers/AuthController.php`
 
 ## Propósito
-Maneja **inicio de sesión, registro de clientes, recuperación de contraseña y cierre de
-sesión**. Hay un solo login para los 4 roles.
+Script procesador de **autenticación**: login unificado, registro de cliente,
+recuperación de contraseña (simulada) y cierre de sesión.
 
-## Dependencias
-`Controller`, `Auth`, `Session`, `App\Models\Usuario`, `App\Models\Cliente`.
+Las **pantallas** (`/login`, `/register`, `/forgot-password`) las sirve `public/index.php`,
+que renderiza la vista con el layout `auth`. Este script solo procesa los **POST**.
 
-## Métodos
+## Dependencias (`require_once`)
+`config/database.php`, `Core/helpers.php`, `Core/Session.php`, `Core/Auth.php`,
+`Models/Usuario.php`, `Models/Cliente.php`.
 
-### `showLogin(): string` — `GET /login`
-Si ya hay sesión → `redirect(Auth::homeFor(rol))`. Si no → vista `auth/login`
-(layout `auth`).
+## Cómo llega el `$action`
+Los formularios de auth **no envían** un campo `action`. `public/index.php` lo deduce de
+la ruta antes del `require`:
 
-### `login(): string` — `POST /login`
-1. `verifyCsrf()`.
-2. `validate(['correo' => 'required|email', 'contrasena' => 'required'])`.
-3. `Usuario::porCorreo($correo)` — busca el correo en las 4 tablas de cuentas.
-4. Si no existe **o** `!password_verify(...)` → `back('/login', ['contrasena' => 'Correo o contraseña incorrectos.'])`.
-5. Si `!$cuenta['activo']` → error "cuenta inactiva".
-6. `Auth::login($cuenta['role'], [id, nombre, correo, telefono])`.
-7. Flash "Ingreso exitoso · Entrando al panel de ...".
-8. Redirección según rol:
-   - `cocina` → `/kitchen/estacion` (login de PIN)
-   - `domiciliario` → `/delivery/estacion`
-   - resto → `Auth::homeFor($rol)`
+```php
+$_POST['action'] = ($uri === '/forgot-password') ? 'forgot' : ltrim($uri, '/');
+```
 
-### `devLogin(string $correo): string` — `GET /_dev/login/{correo}`
-**Solo si `app.debug` es true** (la ruta ni se registra si no). Inicia sesión sin
-contraseña (por correo). Marca los flags de estación para cocina/domiciliario. Redirige
-a `?next=` si empieza por `/`, o al panel del rol. Sirve para pruebas/capturas.
+## Acciones (`$action`)
 
-### `showRegister()` / `register()` — `/register`
+### `login` — `POST /login`
+1. Exige `correo` y `contrasena` no vacíos.
+2. `Usuario::porCorreo($correo)` → busca en las 4 tablas de cuentas.
+3. `Usuario::verificarPassword($contrasena, $cuenta['row']['contrasena'])` (bcrypt).
+4. Rechaza la cuenta si `activo` es falso ("Cuenta inactiva").
+5. Arma el array de sesión con `id`, `nombre`, `correo`, `telefono` **más la clave propia
+   del rol** (`id_cliente`, `id_ayudante`, `id_domiciliario`), que es la que usan las
+   vistas de cada panel. Al domiciliario le guarda además `estado_disponibilidad`.
+6. `Auth::login($rol, $sesion)` (regenera el ID de sesión).
+7. Redirige según el rol: `/admin`, `/kitchen`, `/delivery` o `/client`.
+
+> A Cocina y Domiciliario el guardia de `public/index.php` los desvía enseguida a su
+> **login de estación** (`/kitchen/estacion`, `/delivery/estacion`) para pedir el PIN.
+
+### `register` — `POST /register`
 Registra un **cliente**:
-1. `validate`: nombre (3–120), correo, teléfono (7–20), fecha de nacimiento (date),
-   contraseña (min 6, `confirmed`), `habeas_data` (`accepted`).
-2. `Usuario::existeCorreoOTelefono` → si ya existe, error.
-3. `Cliente::registrar($data)` (hashea la contraseña).
-4. `Auth::login('cliente', ...)` + flash de bienvenida + `redirect('/client')`.
+1. Valida campo por campo y acumula en `$errores`: nombre, correo (`FILTER_VALIDATE_EMAIL`),
+   teléfono, fecha de nacimiento (`strtotime`), contraseña de 6+ caracteres, confirmación
+   que coincida y **aceptación de habeas data** obligatoria.
+2. Si hay errores, los guarda en `$_SESSION['_errors']` y los valores escritos en
+   `$_SESSION['_old']` (los leen los helpers `error()` y `old()` en la vista) y vuelve a
+   `/register`.
+3. `Usuario::existeCorreoOTelefono(...)` → rechaza duplicados.
+4. `Cliente::registrar([...])` (hashea la contraseña y guarda la fecha de habeas data).
+5. `Auth::login('cliente', [...])` → entra directo y redirige a `/client`.
 
-### `showForgot()` / `forgot()` — `/forgot-password`
-Flujo **simulado**: siempre responde "Si el correo existe, enviamos un código" y
-redirige a `/login`. En producción enviaría un código real (tabla `CODIGO_VERIFICACION`).
+### `forgot` — `POST /forgot-password`
+Flujo **simulado**: siempre deja el mismo flash ("Si el correo existe, enviamos un
+código") y redirige a `/login`. No consulta la tabla `CODIGO_VERIFICACION`.
 
-### `logout(): string` — `POST /logout`
-`verifyCsrf()` + `Auth::logout()` + flash "Sesión cerrada" + `redirect('/login')`.
+### `logout` — `POST /logout`
+`Auth::logout()` (borra rol, usuario y carrito) + flash + `/login`.
+
+Cualquier otro `$action` → `redirect('/login')`.
 
 ## Notas
-- La clave del diseño: **un solo formulario**, y `Usuario::porCorreo` descubre el rol.
-- El mensaje de error no dice si falló el correo o la contraseña (no da pistas a un atacante).
+- El **cierre de sesión por GET** no pasa por aquí: lo resuelve `public/index.php`
+  directamente (`case $uri === '/logout'`).
+- **No existe** ninguna acción de login de desarrollo sin contraseña.

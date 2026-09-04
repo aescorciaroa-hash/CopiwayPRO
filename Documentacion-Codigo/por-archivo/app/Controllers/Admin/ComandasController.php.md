@@ -1,44 +1,40 @@
 # `app/Controllers/Admin/ComandasController.php`
 
 ## Ubicación
-`app/Controllers/Admin/ComandasController.php` · namespace `App\Controllers\Admin`
+`app/Controllers/Admin/ComandasController.php`
 
 ## Propósito
-**Órdenes en Tiempo Real** (`/admin/comandas`): el admin ve todas las comandas del
-turno, registra pedidos manuales (llamada/WhatsApp) y corrige direcciones.
+Script procesador del **Tablero de Comandas**: detalle de un pedido en JSON, alta de
+**pedidos manuales** (llamada / WhatsApp) y corrección de la dirección de entrega.
 
-## Dependencias
-`Controller`, `Session`, `App\Models\Pedido`, `App\Models\PedidoServicio`,
-`App\Models\Producto`.
+El tablero `/admin/comandas` (GET) lo arma `public/index.php` con `Pedido::activos()`.
 
-## Métodos
+## Dependencias (`require_once`)
+`config/database.php`, `Core/helpers.php`, `Core/Session.php`,
+`Models/Pedido.php`, `Models/PedidoServicio.php`, `Models/Producto.php`,
+`Models/Configuracion.php`.
 
-### `index(): string` — `GET /admin/comandas`
-1. `$activos = Pedido::delTurno()` — activos + entregados/cancelados de las últimas 18 h.
-2. A cada pedido le añade `codigo` (`Pedido::codigo`) y `lineas` (`Pedido::detalle`).
-3. Vista `admin/comandas/index` con: `activos`, `contadores` (`Pedido::contarPorEstado`),
-   `productos` (`Producto::catalogo(false)` para el modal de pedido manual).
+## Acciones (`$action`)
 
-### `datos(): string` — `GET /admin/comandas/datos`
-Contadores + lista de activos en **JSON** (para refresco).
+### `detalle` — `GET /admin/comandas/{id}`
+`Pedido::completo($id)` + `codigo`. Responde **JSON** (404 con `{"error": ...}` si no existe).
+Alimenta el modal "Ver detalle".
 
-### `detalle(string $id): string` — `GET /admin/comandas/{id}`
-`Pedido::completo($id)` en **JSON** (para el modal "ver detalle").
+### `crearManual` — `POST /admin/comandas/manual`
+1. Lee `cliente`, `telefono`, `direccion` y los arrays `producto_id[]` / `producto_cant[]`.
+2. Valida que haya teléfono, dirección y al menos un producto; si no, flash de error y vuelve.
+3. Arma `$lineas` (cada una con `personalizaciones` vacías).
+4. `PedidoServicio::clienteParaManual($nombre, $telefono)` → busca o crea el cliente por teléfono.
+5. `PedidoServicio::crear([...])` con `canal_origen` = `$_POST['canal']` (por defecto `llamada`),
+   `metodo_pago` = `efectivo` y **`aprobar_pago = true`** → entra directo a cocina.
+6. Flash con el código del pedido (que llevará prefijo `#MAN-`).
 
-### `crearManual(): string` — `POST /admin/comandas/manual`
-1. `verifyCsrf()`.
-2. Lee `cliente`, `telefono`, `direccion` y los arrays `producto_id[]` / `producto_cant[]`.
-3. Si falta teléfono, dirección o productos → flash de error.
-4. Arma las `$lineas` (sin personalizaciones).
-5. `PedidoServicio::clienteParaManual($nombre, $telefono)` — busca el cliente por
-   teléfono o crea uno mínimo.
-6. `PedidoServicio::crear([... 'canal_origen' => 'llamada', 'metodo_pago' => 'efectivo',
-   'aprobar_pago' => true ...])` — entra **directo a cocina**.
-7. Flash "Pedido manual #MAN-XXXX creado" + `redirect('/admin/comandas')`.
+### `editarDireccion` — `POST /admin/comandas/{id}/direccion`
+`PedidoServicio::editarDireccion($id, $dir)` si ambos vienen no vacíos.
 
-### `editarDireccion(string $id): string` — `POST /admin/comandas/{id}/direccion`
-`verifyCsrf()` + `PedidoServicio::editarDireccion($id, $dir)` + flash.
+Cualquier otro `$action` → `redirect('/admin/comandas')`.
 
 ## Notas
-- Los pedidos manuales llevan prefijo `#MAN-` en el código (los web `#ORD-`).
-- El pedido manual se aprueba al crearse (regla: se cobra al entregar, en efectivo).
+- Las dos acciones POST terminan en `redirect('/admin/comandas')` (**PRG**).
+- El `id` de la ruta lo inyecta `public/index.php` en `$_POST['id']` con una expresión regular
+  antes de hacer el `require`.

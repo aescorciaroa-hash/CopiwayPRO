@@ -1,33 +1,36 @@
 # `app/Controllers/Client/CreadorController.php`
 
 ## Ubicación
-`app/Controllers/Client/CreadorController.php` · namespace `App\Controllers\Client`
+`app/Controllers/Client/CreadorController.php`
 
 ## Propósito
-El **Creador Interactivo** "Arma tu Burger" (`/client/creador`): el cliente construye
-una hamburguesa eligiendo ingredientes capa por capa.
+Script procesador del **Creador Interactivo** ("Arma tu Burger"): convierte las capas
+elegidas por el cliente en una línea de carrito.
 
-## Dependencias
-`Controller`, `Session`, `Database`, `App\Models\Producto`, `App\Models\Carrito`,
-`App\Models\Ingrediente`.
+La pantalla `/client/creador` (GET) la arma `public/index.php` con
+`Producto::ingredientesCreador()`.
 
-## Métodos
+## Dependencias (`require_once`)
+`config/database.php`, `Core/helpers.php`, `Core/Session.php`,
+`Models/Producto.php`, `Models/Carrito.php`, `Models/Ingrediente.php`,
+`Models/Configuracion.php`.
 
-### `index(): string` — `GET /client/creador`
-Vista con `ingredientes` = `Producto::ingredientesCreador()` (insumos alimenticios con
-un **precio calculado** a partir del costo y el margen de ganancia configurado).
+## Acciones (`$action`)
 
-### `agregar(): string` — `POST /client/creador/agregar`
-Recibe `capa[]` (ids de ingredientes) y `cantidad`.
-1. `verifyCsrf()`. Si no hay capas → flash "Burger vacía".
-2. Busca un producto oculto llamado **"Hamburguesa Personalizada"**. Si no existe, lo
-   crea (`estado = 'oculto'`, precio 0, en la primera categoría de menú).
-3. Por cada capa con stock > 0, calcula su precio
-   (`precio_extra` si tiene, si no `costo_unitario * (1 + margen/100)`) y arma una
-   personalización `accion => 'agregar'`.
-4. `Carrito::agregar($idBase, $cantidad, $pers)` → `redirect('/client/carrito')`.
+### `agregar` — `POST /client/creador/agregar`
+1. Exige al menos una capa en `$_POST['capa'][]`.
+2. Busca el producto base **"Hamburguesa Personalizada"** con una consulta directa sobre
+   `$conn`. Si no existe, lo crea con `Producto::guardar()` en la primera categoría de
+   ámbito `menu` y con `estado = 'oculto'` (no aparece en el catálogo).
+3. Por cada capa, salta los ingredientes sin stock y calcula el precio:
+   - si el ingrediente tiene `precio_extra > 0`, usa ese;
+   - si no, `round(costo_unitario * (1 + margen_ganancia_defecto / 100))`.
+4. Todas las capas se guardan como personalizaciones de **acción `agregar`** (EXTRA).
+5. `Carrito::agregar($idBase, $cantidad, $pers)` y redirige a `/client/carrito`.
+
+Cualquier otro `$action` → `redirect('/client/creador')`.
 
 ## Notas
-- El producto base "Hamburguesa Personalizada" se **reutiliza**: solo se crea una vez.
-- El precio de la burger personalizada = suma de los extras (el producto base cuesta 0).
-- Comparte la fórmula de precio con `Producto::ingredientesCreador`.
+- El precio de la hamburguesa personalizada sale **entero de los extras**: el producto
+  base vale 0.
+- Es el único punto del cliente donde se puede crear un `PRODUCTO`, y siempre oculto.

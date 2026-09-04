@@ -1,16 +1,27 @@
 # `app/Models/Empleado.php`
 
 ## Ubicación
-`app/Models/Empleado.php` · namespace `App\Models` · **no extiende `Model`** (servicio)
+`app/Models/Empleado.php`
 
 ## Propósito
 Gestión **unificada** de ayudantes de cocina y domiciliarios: los trata como "empleados"
 aunque estén en tablas distintas (`AYUDANTE_COCINA`, `DOMICILIARIO`).
 
 ## Dependencias
-`App\Core\Database`.
+La conexión global `$conn` de `config/database.php`, que el constructor guarda en
+`$this->conn`. Nada más.
 
-## Métodos (todos `static`)
+## Cómo se usa
+```php
+require_once __DIR__ . '/../Models/Empleado.php';
+$empleadoModel = new Empleado();
+$empleadoModel->todos();
+```
+
+Trabaja sobre **dos tablas** (`AYUDANTE_COCINA` y `DOMICILIARIO`) según el `$rol` que
+recibe (`'cocina'` o `'domiciliario'`).
+
+## Métodos (de instancia, se llaman con `->`)
 
 ### `todos(): array`
 Hace dos `SELECT` (uno por tabla) con columnas **alineadas** (mismos nombres, `NULL`

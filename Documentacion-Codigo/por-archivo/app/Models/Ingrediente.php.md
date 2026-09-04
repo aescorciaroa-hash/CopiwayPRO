@@ -1,19 +1,32 @@
 # `app/Models/Ingrediente.php`
 
 ## Ubicación
-`app/Models/Ingrediente.php` · namespace `App\Models` · **extends `Model`**
+`app/Models/Ingrediente.php`
 
 ## Propósito
 Tabla `INGREDIENTE` (insumos). Listado con valorización, alertas de stock crítico,
 KPIs y **movimientos de inventario** (entradas/salidas/ajustes).
 
-## Configuración
+## Cómo se usa
+No es una clase estática y no hereda de nada. Se instancia y recibe la conexión global
+en el constructor:
+
 ```php
-protected static string $table = 'INGREDIENTE';
-protected static string $key   = 'id_ingrediente';
+require_once __DIR__ . '/../Models/Ingrediente.php';
+$ingredienteModel = new Ingrediente();
+$ingredienteModel->criticos();
 ```
 
-## Métodos propios
+## Métodos
+
+### `find($id): ?array`
+El insumo por su id, o `null`.
+
+### `guardar(array $d): string`
+Alta o edición de un insumo. Devuelve el id.
+
+> El controlador de inventario lo llama siempre con `cantidad_stock => 0` y fija la
+> cantidad real con un `moverStock(..., 'entrada', ...)`, para que quede en el historial.
 
 ### `conCategoria(?string $buscar = null): array`
 Cada ingrediente + su categoría + dos campos calculados:

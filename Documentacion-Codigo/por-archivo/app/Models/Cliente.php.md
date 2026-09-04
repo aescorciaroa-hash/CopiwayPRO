@@ -1,23 +1,33 @@
 # `app/Models/Cliente.php`
 
 ## Ubicación
-`app/Models/Cliente.php` · namespace `App\Models` · **extends `Model`**
+`app/Models/Cliente.php`
 
 ## Propósito
 Tabla `CLIENTE`. Registro de clientes, directorio para el admin, historial y el
 chequeo de cumpleaños.
 
-## Configuración
-```php
-protected static string $table = 'CLIENTE';
-protected static string $key   = 'id_cliente';
-```
-Hereda de `Model`: `find`, `insert`, `update`, `delete`, `where`, `count`…
+## Cómo se usa
+No es una clase estática y no hereda de nada. Se instancia y recibe la conexión global
+en el constructor:
 
-## Métodos propios
+```php
+require_once __DIR__ . '/../Models/Cliente.php';
+$clienteModel = new Cliente();
+$clienteModel->find($id);
+```
+
+## Métodos
+
+### `find($id): ?array`
+El cliente por su id, o `null`.
+
+### `pedidosActivos(string $idCliente): array`
+Los pedidos del cliente que aún no se entregaron, con los datos del domiciliario
+(nombre, teléfono, vehículo, placa). Alimenta la pantalla `/client/ordenes`.
 
 ### `registrar(array $d): string`
-`self::insert([...])` con:
+`INSERT INTO CLIENTE` con:
 - `contrasena` = `password_hash($d['contrasena'], PASSWORD_BCRYPT)`,
 - `puntos_fidelidad` = 0,
 - `fecha_aceptacion_habeas_data` = `now()`.

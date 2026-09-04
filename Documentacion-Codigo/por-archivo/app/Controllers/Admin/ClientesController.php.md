@@ -1,28 +1,31 @@
 # `app/Controllers/Admin/ClientesController.php`
 
 ## Ubicación
-`app/Controllers/Admin/ClientesController.php` · namespace `App\Controllers\Admin`
+`app/Controllers/Admin/ClientesController.php`
 
 ## Propósito
-**Directorio de Clientes** (`/admin/clientes`): lista de clientes registrados con su
-resumen de compras, y el historial de cada uno.
+Script procesador del **directorio de clientes**. Hoy solo tiene una responsabilidad:
+devolver en **JSON** el historial de compras de un cliente para el modal "Ver historial".
 
-## Dependencias
-`Controller`, `App\Models\Cliente`, `App\Models\Pedido`.
+El listado `/admin/clientes` (GET) lo arma `public/index.php`.
 
-## Métodos
+## Dependencias (`require_once`)
+`config/database.php`, `Core/helpers.php`, `Core/Session.php`,
+`Models/Cliente.php`, `Models/Pedido.php`.
 
-### `index(): string` — `GET /admin/clientes`
-Lee `?q=` (búsqueda por nombre o teléfono). Vista con `clientes`
-(`Cliente::directorio($buscar)` — incluye nº de pedidos, total gastado y último pedido)
-y `buscar`.
+## Acciones (`$action`)
 
-### `historial(string $id): string` — `GET /admin/clientes/{id}/historial`
-1. `Cliente::find($id)` — si no existe, JSON 404.
-2. `Cliente::historial($id)` — todos sus pedidos.
-3. A cada pedido le añade `codigo`.
-4. Devuelve `{cliente, pedidos}` en **JSON** (para el modal "ver historial").
+### `historial` — `GET /admin/clientes/{id}/historial`
+`public/index.php` captura esa ruta, pone `$_GET['action'] = 'historial'` y `$_GET['id']`,
+y hace `require` de este script.
+
+1. `Cliente::find($id)` y `Cliente::historial($id)`.
+2. A cada pedido le añade `codigo` con `Pedido::codigo($p)`.
+3. **Borra el campo `contrasena`** del cliente antes de responder.
+4. Emite `Content-Type: application/json` y `echo json_encode(['cliente' => ..., 'pedidos' => ...])`.
+
+Cualquier otro `$action` → `redirect('/admin/clientes')`.
 
 ## Notas
-- Solo lectura. El admin no edita ni borra clientes desde aquí.
-- `Cliente::directorio` usa subconsultas correlacionadas para los totales.
+- Es una respuesta JSON pura: **no** carga layout ni vista.
+- La búsqueda del directorio (`?q=...`) se resuelve en `index.php` con `Cliente::directorio($buscar)`.

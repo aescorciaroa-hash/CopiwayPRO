@@ -29,15 +29,33 @@ Reglas:
 
 ## Cómo llegan las variables a la vista
 
-El controlador hace:
-```php
-return $this->view('admin/dashboard', ['ventas' => $x, 'ranking' => $y], 'admin');
-```
-`View::render()` hace `extract(['ventas' => $x, ...])`, y dentro de la vista ya
-existen `$ventas` y `$ranking`.
+No hay motor de plantillas ni `extract()`. Las variables llegan **por ámbito de PHP**:
+`public/index.php` las declara y luego hace `require` de la vista, así que la vista las
+ve directamente.
 
-Variables **globales** siempre disponibles: `$_flash` (mensajes), `$_auth` (usuario
-logueado), `$_role` (su rol).
+```php
+// public/index.php, case '/admin':
+$kpi     = $pedidoModel->kpis($rango[0], $rango[1]);
+$ranking = $pedidoModel->rankingProductos($rango[0], $rango[1]);
+
+ob_start();
+require dirname(__DIR__) . '/app/Views/admin/dashboard.php';   // aqui $kpi y $ranking existen
+$content = ob_get_clean();
+require dirname(__DIR__) . '/app/Views/layouts/admin.php';      // el layout imprime $content
+exit;
+```
+
+`ob_start()` / `ob_get_clean()` captura todo lo que imprime la vista en `$content`, y el
+layout lo pinta en su hueco. Es el sustituto casero de un motor de plantillas.
+
+Variables que arman **los propios layouts**, no el controlador:
+- `$_auth = Auth::user() ?? []` — el usuario logueado (lo usan `layouts/admin.php` y
+  `layouts/client.php` para la cabecera).
+
+Los mensajes flash **no llegan por variable**: `partials/toast.php` lee
+`$_SESSION['_flash']` directamente y lo vacía él mismo.
+
+> Para saber qué variables recibe una vista, se busca su `case` en `public/index.php`.
 
 ## Layouts (la plantilla "marco")
 
@@ -61,7 +79,11 @@ donde se mete la vista:
 | `client` | panel del cliente (sidebar lateral y navegación) |
 | `kitchen` | KDS de cocina (interfaz limpia `#f8fafc`, sidebar blanco con logo CopiwayPRO, resumen de preparación e inventario crítico, 3 columnas KDS: Pendientes, En Preparación con borde de resplandor rojo, Listos) |
 | `delivery` | panel del domiciliario (diseño táctico split-screen en pantalla completa con mapa Leaflet, lista lateral de pedidos con cobrar en efectivo, Waze/Maps y validación por PIN) |
-| `blank` | sin marco: tirillas de impresión, respuestas JSON o ventanas modales |
+
+> Son **6 layouts** en total. No existe un layout "blank": las pantallas sin marco
+> (`kitchen/estacion.php`, `delivery/estacion.php`, la tirilla de cocina y el reporte de
+> caja) se cargan con un `require` directo desde `public/index.php`, sin envolverlas en
+> ningún layout. Las respuestas JSON no pasan por ninguna vista.
 
 > El sidebar de admin/client/kitchen es **fijo a la altura de la pantalla**
 > (`sticky top-0 h-screen`), para que las acciones principales y "Cerrar Sesión" siempre estén visibles sin scroll.
@@ -142,9 +164,18 @@ el cálculo en vivo del margen de ganancia, el formulario de pedido manual…
 Para los modales de detalle, el frontend hace `fetch` a una ruta que devuelve **JSON**:
 
 ```js
-const res = await fetch('/admin/comandas/' + id);   // GET
-this.pedido = await res.json();                       // el controlador hizo $this->json($p)
+const res = await fetch('<?= url("/admin/comandas") ?>/' + id);   // GET
+this.pedido = await res.json();
+```
+
+Del otro lado, el controlador escribe el JSON a mano:
+
+```php
+header('Content-Type: application/json; charset=utf-8');
+echo json_encode($pedido);
+exit;
 ```
 
 Los formularios normales (crear pedido, cambiar estado) **sí** recargan: envían un
-`<form method="post">` y el servidor responde con `redirect()`.
+`<form method="post">` a una ruta limpia y el servidor responde con `redirect()`
+(patrón PRG). Ver `07-Rutas-y-Middleware.md`.

@@ -1,51 +1,58 @@
 # `app/Controllers/Delivery/PanelController.php`
 
 ## Ubicación
-`app/Controllers/Delivery/PanelController.php` · namespace `App\Controllers\Delivery`
+`app/Controllers/Delivery/PanelController.php`
 
 ## Propósito
-El **panel del domiciliario** (`/delivery`): ver pedidos listos, tomarlos, iniciar ruta
-y entregar validando el **PIN de 4 dígitos** del cliente.
+Script procesador del **panel del domiciliario**: PIN de estación, disponibilidad,
+autoasignación de pedidos, inicio de ruta y **entrega validada por PIN**.
 
-## Dependencias
-`Controller`, `Auth`, `Session`, `Database`, `App\Models\Pedido`,
-`App\Models\PedidoServicio`, `App\Models\Configuracion`.
+La pantalla `/delivery` (GET) la arma `public/index.php`, que separa `Pedido::activos()`
+en `$disponibles` (estado `listo` y sin domiciliario) y `$mios` (los asignados a mí).
 
-## Método privado
+## Dependencias (`require_once`)
+`config/database.php`, `Core/helpers.php`, `Core/Session.php`, `Core/Auth.php`,
+`Models/Pedido.php`, `Models/PedidoServicio.php`, `Models/Configuracion.php`.
 
-### `requireEstacion(): void`
-Si no está `Session::get('estacion_domi_ok')` → `redirect('/delivery/estacion')`.
+## Acciones (`$action`)
 
-## Métodos
+### `estacionLogin` — `POST /delivery/estacion`
+`hash_equals(Configuracion::value('pin_estacion_domiciliario'), $pin)` →
+`Session::set('estacion_domi_ok', true)` y `/delivery`.
 
-### `estacionForm()` / `estacionLogin()` — `/delivery/estacion`
-Segundo login por PIN en tarjeta blanca centrada (`rounded-[32px]`, `shadow-2xl` sobre `#f8fafc`). `hash_equals` de `pin_estacion_domiciliario`. Éxito → `estacion_domi_ok = true` → `/delivery`.
+### `disponibilidad` — `POST /delivery/disponibilidad`
+`UPDATE DOMICILIARIO SET estado_disponibilidad = ?` con `disponible` o `desconectado`
+(cualquier valor distinto de `disponible` cae en `desconectado`).
 
-### `index(): string` — `GET /delivery`
-1. `$yo` — la fila del domiciliario logueado.
-2. `$disponibles` — pedidos en estado `listo` **sin** domiciliario.
-3. `$mios` — pedidos asignados a mí en estado `listo`/`en_camino`.
-4. Un closure `$enriquecer` añade `codigo` y `lineas` a cada lista.
-5. Renderiza la vista split-screen (`delivery/index`): sidebar lateral de entregas con banner `¡COBRAR EN EFECTIVO: $X!`, botón directo de WhatsApp para contactar al cliente, accesos Waze/Maps/Mapa y mapa Leaflet en pantalla completa con card flotante de destino (`Llegada est: 12 mins`) y barra inferior de entrega con PIN.
+### `tomar` — `POST /delivery/pedido/{id}/tomar`
+Dos `UPDATE` preparados:
 
-### `disponibilidad(): string` — `POST /delivery/disponibilidad`
-`UPDATE DOMICILIARIO SET estado_disponibilidad = 'disponible' | 'desconectado'`. Cambia el interruptor táctil en el sidebar del domiciliario.
+```sql
+UPDATE PEDIDO SET id_domiciliario = ?
+ WHERE id_pedido = ? AND estado = 'listo' AND id_domiciliario IS NULL;
+UPDATE DOMICILIARIO SET estado_disponibilidad = 'en_ruta' WHERE id_domiciliario = ?;
+```
 
-### `tomar(string $id): string` — `POST /delivery/pedido/{id}/tomar`
-Si el pedido está `listo` y sin domiciliario:
-`UPDATE PEDIDO SET id_domiciliario = ?` + `UPDATE DOMICILIARIO SET estado_disponibilidad = 'en_ruta'`.
+Las condiciones `estado = 'listo' AND id_domiciliario IS NULL` evitan que **dos
+domiciliarios se queden con el mismo pedido**.
 
-### `iniciarRuta(string $id): string` — `POST /delivery/pedido/{id}/ruta`
-Si el pedido es mío: `PedidoServicio::cambiarEstado($id, 'en_camino')` (avisa al cliente).
+### `iniciarRuta` — `POST /delivery/pedido/{id}/iniciar`
+`PedidoServicio::cambiarEstado($id, 'en_camino')` → notifica al cliente.
+`public/index.php` traduce el segmento `iniciar` de la URL a la acción `iniciarRuta`.
 
-### `entregar(string $id): string` — `POST /delivery/pedido/{id}/entregar`
-1. `Pedido::completo($id)`. Si no es mío → redirect.
-2. **Valida el PIN:** `hash_equals($p['pin_entrega'], $this->input('pin'))`. Si no coincide → flash "PIN incorrecto".
-3. Si el pago era **efectivo** → `PedidoServicio::aprobarPago($id)` (ahora sí se descuenta inventario y se suman puntos, vía trigger).
+### `entregar` — `POST /delivery/pedido/{id}/entregar`
+1. `Pedido::completo($id)`.
+2. **`hash_equals((string) $p['pin_entrega'], $pin)`** — si el PIN de 4 dígitos no coincide,
+   flash de error y **no** se entrega.
+3. Si `pago_metodo === 'efectivo'` → `PedidoServicio::aprobarPago($id)`
+   (**aquí** se dispara `trg_pago_aprobado` para los pedidos en efectivo).
 4. `PedidoServicio::cambiarEstado($id, 'entregado')`.
-5. Si no quedan pedidos activos asignados → vuelve automáticamente a `disponible`.
+
+Cualquier otro `$action` → `redirect('/delivery')`.
 
 ## Notas
-- El PIN se generó al crear el pedido (trigger `trg_pedido_pin`) y lo ve el cliente en
-  "Órdenes Activas".
-- El pago en efectivo se aprueba **al entregar** (regla "Cero Crédito").
+- El guardia del PIN de estación está en `public/index.php`, no aquí.
+- El PIN de entrega lo genera el trigger `trg_pedido_pin` al crear el pedido; el cliente
+  lo ve en `/client/ordenes`.
+- WhatsApp, Waze y Google Maps son **enlaces de la vista** (`delivery/index.php`); este
+  script no interviene.

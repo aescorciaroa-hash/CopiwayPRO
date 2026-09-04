@@ -17,13 +17,13 @@ antes de un examen. Lee los archivos en orden.
 | 03 | [Estructura de carpetas](03-Estructura-de-Carpetas.md) | Qué hay en cada carpeta y archivo |
 | 04 | [Conceptos de PHP que debes saber](04-Conceptos-de-PHP-que-Debes-Saber.md) | Clases, `mysqli`, sentencias preparadas, sesiones, `match`, arreglos… |
 | 05 | [Qué es MVC y cómo fluye una petición](05-Que-es-MVC-y-Como-Fluye-una-Peticion.md) | El patrón Modelo-Vista-Controlador simplificado con este proyecto |
-| 06 | [El núcleo del sistema (Core y Config)](06-El-Nucleo-del-Framework-Core.md) | `database.php`, `helpers.php`, `Session`, `Auth`, `Periodo` |
-| 07 | [Punto de entrada y vistas directas](07-Rutas-y-Middleware.md) | Inicialización directa en `public/index.php` y llamadas a scripts de controlador |
+| 06 | [El núcleo del sistema (Core y Config)](06-El-Nucleo-del-Framework-Core.md) | `database.php`, `helpers.php`, `Session`, `Auth`, `Periodo` (el nombre del archivo dice "Framework", pero no lo hay) |
+| 07 | [Punto de entrada, rutas y control de acceso](07-Rutas-y-Middleware.md) | El Front Controller `public/index.php`: normalizar la URL, el guardia por rol, el despacho a controladores y el `switch` de vistas |
 | 08 | [Modelos (la capa de datos)](08-Modelos-La-Capa-de-Datos.md) | Cada modelo y sus consultas preparadas MySQLi |
 | 09 | [Controladores (la lógica)](09-Controladores-La-Logica.md) | Cada controlador como script plano procesador de peticiones |
 | 10 | [Vistas, layouts y frontend](10-Vistas-Layouts-y-Frontend.md) | Inclusión de layouts, Tailwind, Alpine, toasts |
 | 11 | [Base de datos: tablas y triggers](11-Base-de-Datos-Tablas-y-Triggers.md) | Las 20 tablas, relaciones y los disparadores automáticos |
-| 12 | [Seguridad](12-Seguridad.md) | CSRF, hash de contraseñas, control de acceso por sesión |
+| 12 | [Seguridad](12-Seguridad.md) | SQL, XSS, CSRF, bcrypt, control de acceso por rol y **puntos débiles conocidos** |
 | 13 | [Reglas de negocio](13-Reglas-de-Negocio.md) | Cero crédito, tarifa plana, punto de no retorno, fidelización… |
 | 14 | [Ciclo de vida de un pedido](14-Ciclo-de-Vida-de-un-Pedido.md) | Del carrito del cliente hasta el cierre de caja |
 | 15 | [Preguntas y respuestas para el examen](15-Preguntas-y-Respuestas-para-el-Examen.md) | Posibles preguntas con respuestas cortas |
@@ -42,4 +42,8 @@ antes de un examen. Lee los archivos en orden.
   descontar inventario, sumar puntos de fidelidad).
 - Hay **4 tipos de usuario**: Administrador, Cliente, Cocina y Domiciliario. Cada uno
   tiene su propio panel y sus propias vistas.
+- **Todo pasa por `public/index.php`**: ahí están el enrutado, el control de acceso por
+  rol y la lógica de cada pantalla GET. Es el archivo que hay que leer primero.
+- Las **pantallas GET no tienen controlador**; los controladores solo procesan POST y
+  devuelven JSON.
 

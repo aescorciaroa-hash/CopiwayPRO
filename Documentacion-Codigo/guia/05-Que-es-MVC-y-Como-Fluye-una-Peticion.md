@@ -25,49 +25,73 @@ Ejemplo: una acción de guardar insumo en `admin/inventario`
 
 ```
 1. NAVEGADOR / USUARIO
-   Envia un formulario POST a /app/Controllers/Admin/InventarioController.php?action=guardarInsumo
+   Envia un formulario POST a la ruta limpia  /admin/inventario/insumo
 
-2. public/index.php o controlador directo
-   - Carga la conexión global $conn desde config/database.php
-   - Inicia las funciones auxiliares helpers.php y la sesión
+2. FRONT CONTROLLER (public/index.php)
+   - Carga $conn (config/database.php), helpers.php, Session, Auth y los 11 modelos
+   - Normaliza la URL  ->  $uri = '/admin/inventario/insumo'
+   - GUARDIA RBAC: la ruta empieza por /admin  ->  exige rol 'admin'
+   - Ve que termina en '/insumo'  ->  $_POST['action'] = 'guardarInsumo'
+   - require app/Controllers/Admin/InventarioController.php
 
 3. CONTROLADOR (app/Controllers/Admin/InventarioController.php)
-   - Valida la acción solicitada ($action === 'guardarInsumo')
-   - Instancia el modelo required (new Ingrediente())
-   - Llama al método de inserción en la base de datos
+   - Lee $action = $_GET['action'] ?? $_POST['action'] ?? ''
+   - Entra en la rama  if ($action === 'guardarInsumo')
+   - Valida a mano lo que llega en $_POST
+   - Instancia el modelo  (new Ingrediente())  y le pide guardar
 
 4. MODELO (app/Models/Ingrediente.php)
-   - Accede a global $conn (instancia de mysqli)
-   - Ejecuta la consulta con sentencia preparada ($this->conn->prepare)
-   - Asigna los parámetros con $stmt->bind_param(...) y ejecuta con $stmt->execute()
+   - Usa $this->conn (la instancia global de mysqli, inyectada en el constructor)
+   - Prepara la consulta con marcadores ?   ($this->conn->prepare)
+   - Vincula los valores  ($stmt->bind_param)  y ejecuta  ($stmt->execute)
 
 5. CONTROLADOR
-   - Establece una notificación de éxito en la sesión ($_SESSION['_flash'])
-   - Redirecciona con redirect('/app/Views/admin/inventario/index.php')
+   - Deja una notificacion en la sesion ($_SESSION['_flash'])
+   - Redirecciona:  redirect('/admin/inventario')          <- patron PRG
 
-6. NAVEGADOR
-   Recarga la vista actualizada mostrando la notificación flotante (toast.php).
+6. NAVEGADOR  ->  GET /admin/inventario
+   - Vuelve a pasar por public/index.php, ahora por el switch de vistas:
+     consulta los modelos, captura la vista con ob_start() y la mete en el layout
+   - toast.php pinta la notificacion que quedo en la sesion
 ```
+
+> Fíjate en el paso 2: **la ruta no nombra el archivo del controlador**. Los formularios
+> apuntan a rutas limpias (`/admin/inventario/insumo`) y es `public/index.php` quien
+> decide qué script cargar y con qué `$action`.
 
 ---
 
 ## Diagrama corto
 
 ```
-          ┌─────────────────────┐
-Petición  │  public/index.php   │  (Inicialización directa)
-─────────▶│ config/database.php │  ($conn global de MySQLi)
-          └──────────┬──────────┘
-                     ▼
-          ┌─────────────────────┐        ┌─────────────────────┐
-          │  Controlador Script │◀──────▶│    Clase Modelo     │◀──────▶  MySQL (mysqli)
-          └──────────┬──────────┘  datos └─────────────────────┘
-                     ▼
-          ┌─────────────────────┐
-          │   Vista PHP + HTML  │  (Layouts e inclusiones simples)
-          └──────────┬──────────┘
-                     ▼
-             Respuesta  ──────────────────────────────────────▶  Navegador
+              +-----------------------------+
+  Peticion    |     public/index.php        |   Front Controller
+  ----------->|  $conn + Core + 11 modelos  |   (config/database.php da el $conn global)
+              |  guardia RBAC + PIN estacion|
+              +--------------+--------------+
+                             |
+              POST / AJAX    |    GET (pantalla)
+          +------------------+------------------+
+          v                                     v
+ +--------------------+              +-------------------------+
+ | Controlador Script |              | switch ($uri) en el     |
+ | app/Controllers/.. |              | propio index.php        |
+ +---------+----------+              +-----------+-------------+
+           |   pide datos                        |  pide datos
+           v                                     v
+ +------------------------------------------------------------+
+ |            Clase Modelo (app/Models/*.php)                  | <--> MySQL
+ |            $this->conn->prepare / bind_param / execute      |      (mysqli)
+ +------------------------------------------------------------+
+           |                                     |
+           | redirect() + flash                  v
+           |                          +-------------------------+
+           |                          | Vista PHP + HTML        |
+           |                          | ob_start() -> $content  |
+           |                          | + layout                |
+           |                          +-----------+-------------+
+           v                                      v
+     Nueva peticion GET  ----------------->   HTML al navegador
 ```
 
 ---

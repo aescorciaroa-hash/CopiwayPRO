@@ -1,43 +1,42 @@
 # `app/Controllers/Client/HistorialController.php`
 
 ## Ubicación
-`app/Controllers/Client/HistorialController.php` · namespace `App\Controllers\Client`
+`app/Controllers/Client/HistorialController.php`
 
 ## Propósito
-**Historial y Recompras** (`/client/historial`): pedidos ya entregados, calificarlos y
-**recomprar en 1 clic**.
+Script procesador del **historial del cliente**: la **recompra en 1 clic** y las
+**reseñas** (1–5 estrellas).
 
-## Dependencias
-`Controller`, `Auth`, `Session`, `Database`, `App\Models\Pedido`, `App\Models\Producto`,
-`App\Models\Carrito`, `App\Models\Cliente`.
+La pantalla `/client/historial` (GET) la arma `public/index.php`, que además calcula ahí
+los filtros (`todos` / `pendientes` / `calificados`) y el total invertido.
 
-## Métodos
+## Dependencias (`require_once`)
+`config/database.php`, `Core/helpers.php`, `Core/Session.php`, `Core/Auth.php`,
+`Models/Pedido.php`, `Models/Producto.php`, `Models/Carrito.php`.
 
-### `index(): string` — `GET /client/historial`
-1. Lee `?filtro=` (`todos` / `pendientes` / `calificados`).
-2. Consulta los pedidos `entregado` del cliente, con `LEFT JOIN RESENA` (para saber si
-   ya tienen calificación). Añade `codigo` y `lineas`.
-3. Separa `calificados` (con `puntaje`) y `pendientes` (sin `puntaje`).
-4. `$lista` según el filtro (`match`).
-5. Pasa a la vista: `pedidos`, `filtro`, `totales` (contadores para las pestañas),
-   `cliente` (para los puntos), `invertido` (suma de todos sus pedidos).
+## Acciones (`$action`)
 
-### `recomprar(string $id): string` — `POST /client/historial/{id}/recomprar`
-1. `verifyCsrf()`. Verifica que el pedido sea del cliente.
-2. `Pedido::detalle($id)` — las líneas originales.
-3. **Valida stock:** si algún producto está agotado → flash "Stock No Disponible" y no
-   duplica nada.
-4. Por cada línea, reconstruye las personalizaciones (usando `id_ingrediente` real y
-   `costo_aplicado`) y `Carrito::agregar(...)`.
-5. Flash + `redirect('/client/carrito')`.
+`public/index.php` reconoce `/client/historial/{id}/recomprar` y `/client/historial/{id}/resena`
+y deja el `{id}` en `$_POST['id']` y la acción en `$_POST['action']`.
 
-### `resena(string $id): string` — `POST /client/historial/{id}/resena`
-1. `verifyCsrf()`. Verifica que sea del cliente y esté `entregado`.
-2. `puntaje` acotado a 1–5, `comentario` opcional.
-3. Si ya hay `RESENA` para ese pedido → `UPDATE`; si no → `INSERT`.
-4. Flash "Reseña Registrada".
+### `recomprar` — `POST /client/historial/{id}/recomprar`
+1. `Pedido::find($id)` y `Pedido::detalle($id)`.
+2. **Primera pasada de validación:** si *cualquier* línea está agotada
+   (`Producto::estaAgotado`), aborta con un flash nombrando el producto y **no agrega nada**.
+3. Segunda pasada: reconstruye las personalizaciones de cada línea desde
+   `accion_modificacion` y `costo_aplicado`, y las mete al carrito con `Carrito::agregar`.
+4. Redirige a `/client/carrito`.
+
+### `resena` — `POST /client/historial/{id}/resena`
+1. Acota el puntaje con `max(1, min(5, ...))`.
+2. Consulta `RESENA` por `id_pedido` con una sentencia preparada sobre `$conn`:
+   - si ya existe → `UPDATE` (puntaje y comentario),
+   - si no → `INSERT` con `uuid()` y `NOW()`.
+3. Vuelve a `/client/historial`.
+
+Cualquier otro `$action` → `redirect('/client/historial')`.
 
 ## Notas
-- La recompra falló antes por guardar `id_ingrediente` vacío; ahora usa el id real de
-  `Pedido::detalle` (que incluye `pe.id_ingrediente`).
-- Una reseña por pedido: la tabla `RESENA` tiene `UNIQUE(id_pedido)`.
+- La reseña es **una por pedido** (la tabla `RESENA` tiene `UNIQUE(id_pedido)`), por eso
+  el script hace *upsert* manual en vez de insertar siempre.
+- Este archivo usa `$conn` directamente para las reseñas; no hay modelo `Resena`.

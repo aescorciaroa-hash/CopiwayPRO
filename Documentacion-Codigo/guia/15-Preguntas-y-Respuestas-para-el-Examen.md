@@ -14,7 +14,21 @@ Un patrón que separa el código en 3: **Modelo** (datos y reglas), **Vista**
 Con la extensión `mysqli` estándar de PHP mediante la variable global `$conn` definida en `config/database.php`.
 
 **¿Cómo llega una petición desde el navegador hasta la respuesta?**
-Navegador → `public/index.php` (o envío directo a un controlador) → Carga `config/database.php` (`$conn`) → Controlador Script → Modelos (`mysqli`) → Vista → HTML / Redirección.
+Navegador → `public/index.php` (**siempre**, el `.htaccess` manda todo ahí) → carga
+`config/database.php` (`$conn`), el núcleo y los modelos → **guardia de acceso por rol**
+→ si es POST, `require` del script de controlador; si es GET, el `case` del `switch`
+→ Modelos (`mysqli`) → Vista + layout → HTML, o `redirect()` si era POST.
+
+**¿Hay un archivo de rutas o una clase `Router`?**
+No. El "enrutador" son los `if` y el `switch ($uri)` de `public/index.php`.
+
+**¿Los controladores son clases?**
+No. Son **scripts planos** que se ejecutan de arriba abajo y ramifican según `$action`.
+No hay clase base `Controller`, ni `$this->view()`, ni namespaces, ni autoload: todo se
+carga con `require_once`.
+
+**¿Dónde está la lógica de una pantalla como el tablero del admin?**
+En `public/index.php`, dentro de su `case`. Las pantallas GET no tienen controlador.
 
 **¿Qué hace un Modelo en este proyecto?**
 Contiene las consultas SQL a la base de datos usando sentencias preparadas nativas de `mysqli` (`prepare`, `bind_param`, `execute`, `get_result`).
@@ -58,7 +72,14 @@ Con los métodos nativos de MySQLi: `$conn->begin_transaction()`, `$conn->commit
 
 **¿Cómo se protege contra XSS?** Escapando toda salida con `e()` (`htmlspecialchars`).
 
-**¿Cómo se protege contra CSRF?** Token secreto por sesión en cada formulario (`csrf_field()`).
+**¿Cómo se protege contra CSRF?** Se genera un token secreto por sesión y se pone en
+cada formulario con `csrf_field()`. ⚠️ **Pero hoy nadie lo verifica**:
+`Session::checkCsrf()` existe y no se llama en ningún punto, así que la protección no
+está activa. Ver `12-Seguridad.md` §3.
+
+**¿Cómo se controla que un cliente no entre a `/admin`?** Con el guardia del principio de
+`public/index.php`: deduce el rol exigido del prefijo de la ruta y, si no coincide,
+**redirige** al panel propio del usuario con `Auth::homeFor()` (no devuelve 403).
 
 **¿Cómo se guardan las contraseñas?** Con `password_hash()` (bcrypt) y se comprueban con `password_verify()`. Nunca en texto plano.
 
@@ -71,8 +92,12 @@ No. Está en el **trigger `trg_pago_aprobado`** de la base de datos. PHP solo ha
 `UPDATE PAGO SET estado='aprobado'`.
 
 **¿El carrito se guarda en la base de datos?**
-No. Vive en `$_SESSION['carrito']` mientras el cliente navega. Solo al confirmar el
-checkout se crean registros en `PEDIDO`, `DETALLE_PEDIDO`, etc.
+No. Vive en `$_SESSION['carrito']` mientras el cliente navega, y `Auth::logout()` lo
+borra. Solo al confirmar el checkout se crean registros en `PEDIDO`, `DETALLE_PEDIDO`, etc.
+
+> Ojo: el requerimiento **RF-20** ("Persistencia del Carrito") pide sincronizarlo con la
+> base de datos. Eso **no está implementado**. Si te preguntan por RF-20, la respuesta
+> honesta es que el carrito persiste durante la sesión, no entre dispositivos.
 
 **¿Qué framework usa?**
 Ninguno. Es un esquema **MVC Simplificado y Tradicional** en PHP puro con `mysqli`.
